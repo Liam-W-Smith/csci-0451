@@ -4,16 +4,15 @@ image: profile.jpg
 about:
   template: jolla
   links:
-    - icon: twitter
-      text: Twitter
-      href: https://twitter.com
     - icon: linkedin
       text: LinkedIn
-      href: https://linkedin.com
+      href: https://www.linkedin.com/in/liam-smith-b159791b3/
     - icon: github
       text: Github
-      href: https://github.com
+      href: https://github.com/Liam-W-Smith
 
 ---
 
-About this blog
+Hey!
+My name is Liam and I’m a senior at Middlebury College studying geography and mathematics.
+This blog documents my work in CSCI 0451: Machine Learning.
