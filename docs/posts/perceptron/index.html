@@ -244,7 +244,7 @@ window.Quarto = {
 </section>
 <section id="part-a-implementing-perceptron" class="level2">
 <h2 class="anchored" data-anchor-id="part-a-implementing-perceptron">Part A: Implementing Perceptron</h2>
-<p>First, we implemented the perceptron algorithm in <a href="perceptron.py"><code>perceptron.py</code></a>. Recall from Professor Chodrow’s <a href="https://www.philchodrow.prof/ml-notes/chapters/20-perceptron.html#fig-demonstration">lecture notes</a> that the perceptron algorithm involves the following process:</p>
+<p>Recall from Professor Chodrow’s <a href="https://www.philchodrow.prof/ml-notes/chapters/20-perceptron.html#fig-demonstration">lecture notes</a> that the perceptron algorithm involves the following process:</p>
 <ol type="1">
 <li>Randomly select an initial decision boundary <span class="math inline">\(\mathbf{w}^{(0)}\)</span>.</li>
 <li>Iteratively:
@@ -254,7 +254,7 @@ window.Quarto = {
 <li>Update the decision boundary: <span class="math inline">\(\mathbf{w}^{(t+1)} = \mathbf{w}^{(t)} + \mathbb{1} [s_i y_i &lt; 0] y_i \mathbf{x}_i\)</span></li>
 </ul></li>
 </ol>
-<p>This entire process is implemented in <a href="perceptron.py"><code>perceptron.py</code></a>, but for the sake of brevity, I will not discuss every line of code in this blog post. Instead, I focus exclusively on my implementation of the <code>grad()</code> function, which calculates <span class="math inline">\(\mathbb{1} [s_i y_i &lt; 0] y_i \mathbf{x}_i\)</span>.</p>
+<p>I implement this entire process in <a href="perceptron.py"><code>perceptron.py</code></a>, but for the sake of brevity, I will not discuss every line of code in this blog post. Instead, I focus exclusively on my implementation of the <code>grad()</code> function, which calculates <span class="math inline">\(\mathbb{1} [s_i y_i &lt; 0] y_i \mathbf{x}_i\)</span>.</p>
 <div id="cell-4" class="cell" data-execution_count="1">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># grad() function from perceptron.py</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> grad(<span class="va">self</span>, X, y):</span>
@@ -344,7 +344,7 @@ window.Quarto = {
 </section>
 <section id="part-b-fitting-and-evaluating-perceptron-models" class="level2">
 <h2 class="anchored" data-anchor-id="part-b-fitting-and-evaluating-perceptron-models">Part B: Fitting and Evaluating Perceptron Models</h2>
-<p>Now that we have a functional implementation of perceptron, we perform experiments and generate illustrations to illustrate the strengths and weaknesses of the perceptron model.</p>
+<p>Now that we have a functional implementation of perceptron, we perform experiments and generate illustrations to reveal the strengths and weaknesses of the perceptron model.</p>
 <section id="part-b.1-evolution-of-the-model-on-linearly-separable-data" class="level3">
 <h3 class="anchored" data-anchor-id="part-b.1-evolution-of-the-model-on-linearly-separable-data">Part B.1: Evolution of the Model on Linearly Separable Data</h3>
 <p>First, we illustrate how the loss function changes between iterations of the minimal training loop.</p>
@@ -362,8 +362,8 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>As you can see, our implementation of the perceptron algorithm converges to a solution with zero loss after 49 iterations. Notice that throughout this process, the weight vector only changes 6 times. In all 43 other iterations, the randomly selected point was correctly classified by the model at that stage.</p>
-<p>To gain some insight as to the location and orientation of the decision boundary throughout this process, we plot the changes to weight vector in the figure below. We include a subplot for every change to the weight vector, letting the dashed lines represent the previous weight vector and the solid lines represent the current weight vector. In each subplot, the circled point corresponds to the point <span class="math inline">\(i\)</span> that was misclassified leading to the update in the weight vector.</p>
+<p>As you can see, with our data and our randomness seed, the perceptron algorithm converges to a solution with zero loss after 49 iterations. Notice that throughout this process, the weight vector only changes 6 times. In all 43 other iterations, the randomly selected point was correctly classified by the model at that stage.</p>
+<p>To gain some insight as to the location and orientation of the decision boundary throughout this process, we plot the changes to the weight vector in the figure below. We include a subplot for every change to the weight vector, letting the dashed lines represent the previous weight vector and the solid lines represent the current weight vector. In each subplot, the circled point corresponds to the point <span class="math inline">\(i\)</span> that was misclassified, leading to an update to the weight vector.</p>
 <p>Thank you to Professor Chodrow for providing the code for creating this visualization.</p>
 <div id="cell-15" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define line function</span></span>
@@ -514,7 +514,7 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>The decision boundary could be worse, but it is far from perfect. The inadequate performance on non-linearly separable data is a major weakness of the perceptron algorithm.</p>
+<p>The decision boundary could be worse, but it is far from perfect. Perceptron’s inadequate performance on non-linearly separable data is one of its major weaknesses.</p>
 </section>
 <section id="part-b.3-a-5-dimensional-example" class="level3">
 <h3 class="anchored" data-anchor-id="part-b.3-a-5-dimensional-example">Part B.3: A 5-Dimensional Example</h3>
@@ -679,11 +679,11 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>The two algorithms generated incredibly similar results! In fact, if the random point considered at iteration had been the same, these graphs would be identical. In the regular perceptron algorithm, we generate a random number between <span class="math inline">\(0\)</span> and <span class="math inline">\(n\)</span>, but in the minibatch perceptron algorithm, we generate a random permutation of the numbers <span class="math inline">\(0\)</span> through <span class="math inline">\(n-1\)</span> and select the first element of that permutation. This difference appears to result in different points being considered at each iteration, explaining why these graphs differ slightly.</p>
+<p>The two algorithms generated incredibly similar results! In fact, if the random point considered at every iteration had been the same, these graphs would be identical. In the regular perceptron algorithm, we generate a random number between <span class="math inline">\(0\)</span> and <span class="math inline">\(n\)</span>, but in the minibatch perceptron algorithm, we generate a random permutation of the numbers <span class="math inline">\(0\)</span> through <span class="math inline">\(n-1\)</span> and select the first element of that permutation. This difference appears to result in different points being considered at each iteration, explaining why these graphs differ slightly.</p>
 </section>
 <section id="part-c.2-when-k-10" class="level3">
 <h3 class="anchored" data-anchor-id="part-c.2-when-k-10">Part C.2: When k = 10</h3>
-<p>One advantage of the minibatch perceptron is that we can tune our model to different values of <span class="math inline">\(k\)</span> and <span class="math inline">\(\alpha\)</span>. As our first adjustment, let’s try changing <span class="math inline">\(k\)</span> to <span class="math inline">\(10\)</span>.</p>
+<p>One advantage of the minibatch perceptron algorithm is that we can tune our model to different values of <span class="math inline">\(k\)</span> and <span class="math inline">\(\alpha\)</span>. As our first adjustment, let’s try changing <span class="math inline">\(k\)</span> to <span class="math inline">\(10\)</span>.</p>
 <div id="cell-38" class="cell" data-execution_count="15">
 <div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit models</span></span>
 <span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>loss_vec, mb_loss_vec, p_w, mb_p_w <span class="op">=</span> experiment(X <span class="op">=</span> X_ls, y <span class="op">=</span> y_ls, k <span class="op">=</span> <span class="dv">10</span>, alpha <span class="op">=</span> <span class="dv">1</span>)</span>
@@ -711,9 +711,9 @@ window.Quarto = {
 </div>
 <p>It appears that this adjustment allowed our model to converge to a decision boundary in far fewer iterations! While our regular perceptron model requires 49 iterations to achieve perfect classification, the minibatch model with <span class="math inline">\(k = 10\)</span> requires only 8 iterations.</p>
 </section>
-<section id="part-c.2-convergence-on-non-linearly-separable-data" class="level3">
-<h3 class="anchored" data-anchor-id="part-c.2-convergence-on-non-linearly-separable-data">Part C.2: Convergence on Non-Linearly Separable Data</h3>
-<p>Another advantage of the minibatch perceptron model is that it can converge to a decision threshold on data that is not linearly separable! This does not mean that the model will perfectly classify every data point, but rather that the model will converge to a loss value that is less than 0.5.</p>
+<section id="part-c.3-convergence-on-non-linearly-separable-data" class="level3">
+<h3 class="anchored" data-anchor-id="part-c.3-convergence-on-non-linearly-separable-data">Part C.3: Convergence on Non-Linearly Separable Data</h3>
+<p>Another advantage of the minibatch perceptron model is that it can converge to a decision threshold on data that is not linearly separable. This does not mean that the model will perfectly classify every data point, but rather that the model will converge to a decision boundary with a loss value that is less than 0.5.</p>
 <div id="cell-41" class="cell" data-execution_count="16">
 <div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit models</span></span>
 <span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>loss_vec, mb_loss_vec, p_w, mb_p_w <span class="op">=</span> experiment(X <span class="op">=</span> X_nls, y <span class="op">=</span> y_nls, k <span class="op">=</span> <span class="dv">50</span>, alpha <span class="op">=</span> <span class="dv">1</span>)</span>
@@ -791,7 +791,16 @@ window.Quarto = {
 loss_vec.append(loss)
 opt.step(X, y)</code></pre>
 <p>The first two lines store a record of the loss function for tracking purposes. They are not actually required for fitting the perceptron, so we exclude them from our consideration of the algorithm’s runtime complexity. Thus evaluating the runtime complexity of a single iteration of perceptron amounts to evaluating the runtime complexity of <code>opt.step(X, y)</code>.</p>
-<p>In our implementation of perceptron (see <a href="perceptron.py"><code>perceptron.py</code></a>), <code>opt.step()</code> involves the following operations: - <code>n = X.size()[0]</code>: determines the number of rows in <code>X</code> in constant time - <code>i = torch.randint(n, size = (1,))</code>: selects a random integer in constant time - <code>x_i = X[[i],:]</code> and <code>y_i = y[i]</code>: subsets <code>X</code> and <code>y</code> in constant time - <code>current_loss = self.model.loss(X, y)</code>: calculates the current loss, which involves a dot product between two <span class="math inline">\(1 \times p\)</span> vectors, an operation with linear time complexity O(<span class="math inline">\(p\)</span>) - <code>self.model.w += torch.reshape(self.model.grad(x_i, y_i),(self.model.w.size()[0],))</code>: updates <span class="math inline">\(\mathbf{w}\)</span> in linear time due to a dot product in the <code>grad</code> function - <code>new_loss = self.model.loss(X, y)</code>: calculates the updated loss in linear time due to a dot product - <code>return i, abs(current_loss - new_loss)</code>: returns values for visualization in constant time</p>
+<p>In our implementation of perceptron (see <a href="perceptron.py"><code>perceptron.py</code></a>), <code>opt.step()</code> involves the following operations:</p>
+<ul>
+<li><p><code>n = X.size()[0]</code>: determines the number of rows in <code>X</code> in constant time</p></li>
+<li><p><code>i = torch.randint(n, size = (1,))</code>: selects a random integer in constant time</p></li>
+<li><p><code>x_i = X[[i],:]</code> and <code>y_i = y[i]</code>: subsets <code>X</code> and <code>y</code> in constant time</p></li>
+<li><p><code>current_loss = self.model.loss(X, y)</code>: calculates the current loss, which involves a dot product between two <span class="math inline">\(1 \times p\)</span> vectors, an operation with linear time complexity O(<span class="math inline">\(p\)</span>)</p></li>
+<li><p><code>self.model.w += torch.reshape(self.model.grad(x_i, y_i),(self.model.w.size()[0],))</code>: updates <span class="math inline">\(\mathbf{w}\)</span> in linear time O(<span class="math inline">\(p\)</span>) due to a dot product in the <code>grad</code> function</p></li>
+<li><p><code>new_loss = self.model.loss(X, y)</code>: calculates the updated loss in linear time O(<span class="math inline">\(p\)</span>) due to a dot product</p></li>
+<li><p><code>return i, abs(current_loss - new_loss)</code>: returns values for visualization in constant time</p></li>
+</ul>
 <p>Since the operations with the largest time complexity were O(<span class="math inline">\(p\)</span>), the overall runtime complexity of a single iteration of the perceptron algorithm is O(<span class="math inline">\(p\)</span>). This runtime depends on the number of features <span class="math inline">\(p\)</span> rather than the number of observations <span class="math inline">\(n\)</span>, because the dot product is between the weight vector <span class="math inline">\(\mathbf{w}\)</span> and a single row of <span class="math inline">\(X\)</span>.</p>
 <p>In our implementation of minibatch perceptron (see <a href="minibatch_perceptron.py"><code>minibatch_perceptron.py</code></a>), <code>opt.step()</code> involves largely similar operations. The only difference in runtime occurs in the <code>grad()</code> function. Whereas in the regular perceptron, this involved computing a single dot product between two <span class="math inline">\(1 \times p\)</span> vectors, in the minibatch perceptron, this involves computing a matrix product between <span class="math inline">\(X^{k \times p}\)</span> and <span class="math inline">\(w^{p \times 1}\)</span>. Calculating this matrix product is equivalent to calculating <span class="math inline">\(k\)</span> dot products, each of which are O(<span class="math inline">\(p\)</span>). Thus the runtime of the matrix product, and therefore the big O runtime of the minibatch perceptron algorithm, is O(<span class="math inline">\(kp\)</span>).</p>
 </section>
