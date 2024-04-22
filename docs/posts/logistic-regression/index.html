@@ -310,7 +310,7 @@ window.Quarto = {
 <span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>loss_vec_vanilla <span class="op">=</span> []</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_vanilla) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.0001</span>:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_vanilla) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.00001</span>:</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
 <span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.07</span>, beta <span class="op">=</span> <span class="dv">0</span>)</span>
@@ -371,7 +371,7 @@ window.Quarto = {
 <span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>loss_vec_momentum <span class="op">=</span> []</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_momentum) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_momentum[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_momentum[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.0001</span>:</span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_momentum) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_momentum[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_momentum[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.00001</span>:</span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
 <span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.07</span>, beta <span class="op">=</span> <span class="fl">0.9</span>)</span>
