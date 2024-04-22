@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Liam Smith">
-<meta name="dcterms.date" content="2024-04-03">
-<meta name="description" content="Implementing logistic regression using gradient descent with momentum.">
+<meta name="dcterms.date" content="2024-04-15">
+<meta name="description" content="Implementing logistic regression using Newton’s Method.">
 
-<title>My Awesome CSCI 0451 Blog - Implementing Logistic Regression</title>
+<title>My Awesome CSCI 0451 Blog - Implementing Newton’s Method for Logistic Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -197,10 +197,10 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Implementing Logistic Regression</h1>
+      <h1 class="title">Implementing Newton’s Method for Logistic Regression</h1>
                   <div>
         <div class="description">
-          Implementing logistic regression using gradient descent with momentum.
+          Implementing logistic regression using Newton’s Method.
         </div>
       </div>
                 </div>
@@ -219,7 +219,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">April 3, 2024</p>
+        <p class="date">April 15, 2024</p>
       </div>
     </div>
     
@@ -240,7 +240,7 @@ window.Quarto = {
 
 <section id="abstract" class="level2">
 <h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
-<p>In this blog post, we implement logistic regression via empirical risk minimization and perform a few experiments to highlight the model’s strengths and weaknesses. As a part of our experimentation, we implement gradient descent with momentum and investigate the evolution of our loss function in comparison to ordinary gradient descent. We also test our model on data with more dimensions than observations in order to illustrate the perils of overfitting. To see my implementation of logistic regression, please visit <a href="logistic.py"><code>logistic.py</code></a>.</p>
+<p>Write it! Link this: <a href="logistic.py">logistic.py</a></p>
 </section>
 <section id="generating-training-data" class="level2">
 <h2 class="anchored" data-anchor-id="generating-training-data">Generating Training Data</h2>
@@ -249,7 +249,7 @@ window.Quarto = {
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Import packages</span></span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
 <span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> logistic <span class="im">import</span> LogisticRegression, GradientDescentOptimizer</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> logistic <span class="im">import</span> LogisticRegression, GradientDescentOptimizer, NewtonOptimizer</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch</span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> pyplot <span class="im">as</span> plt</span>
 <span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8-whitegrid'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -295,31 +295,57 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="vanilla-gradient-descent" class="level2">
-<h2 class="anchored" data-anchor-id="vanilla-gradient-descent">Vanilla Gradient Descent</h2>
-<p>To begin evaluating the efficacy of our model, we fit logistic regression on our training data with regular gradient descent. We actually only implemented gradient descent with momentum in <a href="logistic.py"><code>logistic.py</code></a>, but if we set <span class="math inline">\(\beta = 0\)</span>, as we do below, this is equivalent to regular gradient descent.</p>
+<section id="convergence-to-an-appropriate-decision-boundary" class="level2">
+<h2 class="anchored" data-anchor-id="convergence-to-an-appropriate-decision-boundary">Convergence to an Appropriate Decision Boundary</h2>
+<p>To begin evaluating the efficacy of our model, we fit logistic regression on our training data with regular gradient descent and with Newton’s method, illustrating that both options converge to the same solution.</p>
 <div id="cell-6" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1234</span>)</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and optimizer</span></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression() </span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(LR)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and gradient descent optimizer</span></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>LR_gradient <span class="op">=</span> LogisticRegression() </span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>opt_gradient <span class="op">=</span> GradientDescentOptimizer(LR_gradient)</span>
 <span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize vector to record loss values</span></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>loss_vec_vanilla <span class="op">=</span> []</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>loss_vec_gradient <span class="op">=</span> [<span class="dv">10</span>, <span class="dv">5</span>]</span>
 <span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_vanilla) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_vanilla[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.0001</span>:</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> loss_vec_gradient[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_gradient[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.00001</span>:</span>
 <span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
-<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.07</span>, beta <span class="op">=</span> <span class="dv">0</span>)</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    opt_gradient.step(X, y, alpha <span class="op">=</span> <span class="fl">0.07</span>, beta <span class="op">=</span> <span class="dv">0</span>)</span>
 <span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and record loss</span></span>
-<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR.loss(X, y) </span>
-<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    loss_vec_vanilla.append(loss)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR_gradient.loss(X, y) </span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    loss_vec_gradient.append(loss)</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a><span class="co"># remove initialization values</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>loss_vec_gradient <span class="op">=</span> loss_vec_gradient[<span class="dv">2</span>:]</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a><span class="co"># reset seed</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1234</span>)</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and newton's optimizer</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>LR_newton <span class="op">=</span> LogisticRegression() </span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>opt_newton <span class="op">=</span> NewtonOptimizer(LR_newton)</span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-31"><a href="#cb3-31" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize vector to record loss values</span></span>
+<span id="cb3-32"><a href="#cb3-32" aria-hidden="true" tabindex="-1"></a>loss_vec_newton <span class="op">=</span> [<span class="dv">10</span>, <span class="dv">5</span>]</span>
+<span id="cb3-33"><a href="#cb3-33" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-34"><a href="#cb3-34" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb3-35"><a href="#cb3-35" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> loss_vec_newton[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_newton[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.00001</span>:</span>
+<span id="cb3-36"><a href="#cb3-36" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-37"><a href="#cb3-37" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb3-38"><a href="#cb3-38" aria-hidden="true" tabindex="-1"></a>    opt_newton.step(X, y, alpha <span class="op">=</span> <span class="dv">10</span>)</span>
+<span id="cb3-39"><a href="#cb3-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-40"><a href="#cb3-40" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and record loss</span></span>
+<span id="cb3-41"><a href="#cb3-41" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR_newton.loss(X, y) </span>
+<span id="cb3-42"><a href="#cb3-42" aria-hidden="true" tabindex="-1"></a>    loss_vec_newton.append(loss)</span>
+<span id="cb3-43"><a href="#cb3-43" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-44"><a href="#cb3-44" aria-hidden="true" tabindex="-1"></a><span class="co"># remove initialization values</span></span>
+<span id="cb3-45"><a href="#cb3-45" aria-hidden="true" tabindex="-1"></a>loss_vec_newton <span class="op">=</span> loss_vec_newton[<span class="dv">2</span>:]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>Now that we have fit our model, let’s inspect our decision boundary in the context of our training data.</p>
+<p>Now that we have fit our models, let’s inspect the decision boundaries in the context of our training data.</p>
 <div id="cell-8" class="cell" data-execution_count="4">
 <div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define function to draw line</span></span>
 <span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> draw_line(w, x_min, x_max, ax, <span class="op">**</span>kwargs):</span>
@@ -331,8 +357,10 @@ window.Quarto = {
 <span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a><span class="co"># plot decision boundary</span></span>
 <span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(figsize <span class="op">=</span> (<span class="dv">5</span>, <span class="dv">5</span>))</span>
 <span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>plot_data(X, y, ax)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>draw_line(LR.w, x_min <span class="op">=</span> <span class="op">-</span><span class="fl">1.25</span>, x_max <span class="op">=</span> <span class="fl">2.25</span>, ax <span class="op">=</span> ax, color <span class="op">=</span> <span class="st">"black"</span>)</span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Training Data and Decision Boundary"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a>draw_line(LR_gradient.w, x_min <span class="op">=</span> <span class="op">-</span><span class="fl">1.25</span>, x_max <span class="op">=</span> <span class="fl">2.25</span>, ax <span class="op">=</span> ax, color <span class="op">=</span> <span class="st">"black"</span>, label <span class="op">=</span> <span class="st">"Gradient Descent"</span>)</span>
+<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>draw_line(LR_newton.w, x_min <span class="op">=</span> <span class="op">-</span><span class="fl">1.25</span>, x_max <span class="op">=</span> <span class="fl">2.25</span>, ax <span class="op">=</span> ax, color <span class="op">=</span> <span class="st">"red"</span>, label <span class="op">=</span> <span class="st">"Newton's Optimizer"</span>)</span>
+<span id="cb4-13"><a href="#cb4-13" aria-hidden="true" tabindex="-1"></a>ax.legend(loc <span class="op">=</span> <span class="st">"lower left"</span>)</span>
+<span id="cb4-14"><a href="#cb4-14" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Training Data and Decision Boundaries"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -341,12 +369,18 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>Visually, this line appears to be an intelligent choice. There are some misclassified points on either side of the line, but our data is not linearly separable, so it is impossible to correctly classify all points using a linear decision boundary. This visual check leads me to believe that our classifier is performing well. As another check, we plot the evolution of our loss function below to verify that it decreases monotonically.</p>
+<p>The decision boundaries for the gradient descent optimizer and Newton’s optimizer are virtually identical! This result makes me confident that we have correctly implemented logistic regression with Newton’s optimizer.</p>
+</section>
+<section id="the-speed-of-newtons-optimizer" class="level2">
+<h2 class="anchored" data-anchor-id="the-speed-of-newtons-optimizer">The Speed of Newton’s Optimizer</h2>
+<p>In the previous section we saw that logistic regression with gradient descent and Newton’s method converge to the same solution. Naturally, one might wonder: do they approach the solution at the same rate? As it turns out, when an appropriate value of <span class="math inline">\(\alpha\)</span> is selected, logistic regression with Newton’s optimizer converges to a solution in far fewer iterations than logistic regression with classic gradient descent. To illustrate this statement, we plot the change in loss over the iterations of both models’ training.</p>
 <div id="cell-10" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the changes in loss </span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_vanilla, color <span class="op">=</span> <span class="st">"slategrey"</span>)</span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>labs <span class="op">=</span> plt.gca().<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="st">"Iteration"</span>, ylabel <span class="op">=</span> <span class="st">"Loss"</span>)</span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Loss Function Throughout Model Training"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_gradient, color <span class="op">=</span> <span class="st">"slategrey"</span>, lw <span class="op">=</span> <span class="dv">3</span>, label <span class="op">=</span> <span class="st">"Gradient Descent"</span>)</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_newton, color <span class="op">=</span> <span class="st">"#A37933"</span>, lw <span class="op">=</span> <span class="dv">3</span>, label <span class="op">=</span> <span class="st">"Newton's Optimizer"</span>)</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>labs <span class="op">=</span> plt.gca().<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="st">"Iteration"</span>, ylabel <span class="op">=</span> <span class="st">"Loss"</span>)</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>plt.legend(loc <span class="op">=</span> <span class="st">"upper right"</span>)</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Loss Function Throughout Model Training"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -355,39 +389,56 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>In this graph, every iteration has a lower loss value than the iteration that precedes it. In other words, our loss function decreases monotonically, as guaranteed by gradient descent.</p>
-<section id="the-benefits-of-momentum" class="level3">
-<h3 class="anchored" data-anchor-id="the-benefits-of-momentum">The Benefits of Momentum</h3>
-<p>Our model appears to be behaving as expected, leading us to the natural question: can we do better if we use gradient descent with momentum? More specifically, can the model converge to an appropriate weight vector in fewer iterations under gradient descent with momentum? To address this question, we fit a logistic regression model using the same values for <span class="math inline">\(\alpha\)</span> and our random seed, but with the modification that <span class="math inline">\(\beta = 0.9\)</span> rather than <span class="math inline">\(0\)</span>.</p>
-<div id="cell-12" class="cell" data-execution_count="6">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<p>As we would expect, the two optimizers begin with identical loss values. However, from the very beginning, the loss values of logistic regression with Newton’s optimizer decrease more rapidly than logistic regression with gradient descent. In fact, Newton’s approach achieves an incremental improvement to the loss function of less than our threshold of <span class="math inline">\(0.00001\)</span> in just over <span class="math inline">\(200\)</span> iterations, whereas the gradient descent approach requires over <span class="math inline">\(1,100\)</span> iterations. For this data and this choice of <span class="math inline">\(\alpha\)</span>, the Newton’s optimizer approach requires dramatically fewer iterations than the regular gradient descent.</p>
+</section>
+<section id="when-alpha-is-too-large" class="level2">
+<h2 class="anchored" data-anchor-id="when-alpha-is-too-large">When <span class="math inline">\(\alpha\)</span> is Too Large</h2>
+<p>The learning rate <span class="math inline">\(\alpha\)</span> impacts how far logistic regression with Newton’s method moves the decision boundary in any given iteration. When <span class="math inline">\(\alpha\)</span> is very small, each change to the decision boundary becomes similarly small, such that it takes many iterations to converge to an adequate solution. In the example above, <span class="math inline">\(\alpha\)</span> was large enough that logistic regression with Newton’s optimizer converged to a solution more rapidly than ordinary gradient descent. But what happens when <span class="math inline">\(\alpha\)</span> is substantially larger? To answer this question, we experiment with fitting a model where <span class="math inline">\(\alpha = 10,000\)</span> in the code chunk below.</p>
+<div id="cell-12" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># reset seed</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1234</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and optimizer</span></span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression() </span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(LR)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and newton's optimizer</span></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>LR_newton_10000 <span class="op">=</span> LogisticRegression() </span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>opt_newton_10000 <span class="op">=</span> NewtonOptimizer(LR_newton_10000)</span>
 <span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a></span>
 <span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize vector to record loss values</span></span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>loss_vec_momentum <span class="op">=</span> []</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>loss_vec_newton_10000 <span class="op">=</span> [<span class="dv">10</span>, <span class="dv">5</span>]</span>
 <span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="bu">len</span>(loss_vec_momentum) <span class="op">&lt;</span> <span class="dv">2</span> <span class="kw">or</span> loss_vec_momentum[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_momentum[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.0001</span>:</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize counter</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>counter <span class="op">=</span> <span class="dv">0</span></span>
 <span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.07</span>, beta <span class="op">=</span> <span class="fl">0.9</span>)</span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and record loss</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR.loss(X, y) </span>
-<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    loss_vec_momentum.append(loss)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> loss_vec_newton_10000[<span class="op">-</span><span class="dv">2</span>] <span class="op">-</span> loss_vec_newton_10000[<span class="op">-</span><span class="dv">1</span>] <span class="op">&gt;</span> <span class="fl">0.00001</span>:</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>    opt_newton_10000.step(X, y, alpha <span class="op">=</span> <span class="dv">10000</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and record loss</span></span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR_newton_10000.loss(X, y) </span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>    loss_vec_newton_10000.append(loss)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb6-23"><a href="#cb6-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update counter</span></span>
+<span id="cb6-24"><a href="#cb6-24" aria-hidden="true" tabindex="-1"></a>    counter <span class="op">+=</span> <span class="dv">1</span></span>
+<span id="cb6-25"><a href="#cb6-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-26"><a href="#cb6-26" aria-hidden="true" tabindex="-1"></a><span class="co"># remove initialization values</span></span>
+<span id="cb6-27"><a href="#cb6-27" aria-hidden="true" tabindex="-1"></a>loss_vec_newton_10000 <span class="op">=</span> loss_vec_newton_10000[<span class="dv">2</span>:]</span>
+<span id="cb6-28"><a href="#cb6-28" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-29"><a href="#cb6-29" aria-hidden="true" tabindex="-1"></a><span class="co"># print results</span></span>
+<span id="cb6-30"><a href="#cb6-30" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"Total iterations:"</span>, counter, <span class="st">"</span><span class="ch">\n</span><span class="st">Resulting loss vector"</span>, loss_vec_newton_10000)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Total iterations: 1 
+Resulting loss vector [tensor(nan)]</code></pre>
 </div>
-<p>To identify any improvements due to gradient descent with momentum, we plot the evolution of the loss function under both scenarios on the same graph.</p>
-<div id="cell-14" class="cell" data-execution_count="7">
-<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the changes in loss </span></span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_vanilla, color <span class="op">=</span> <span class="st">"slategrey"</span>, label <span class="op">=</span> <span class="st">"Gradient Descent"</span>)</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_momentum, color <span class="op">=</span> <span class="st">"#A37933"</span>, label <span class="op">=</span> <span class="st">"Gradient Descent with Momentum"</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>labs <span class="op">=</span> plt.gca().<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="st">"Iteration"</span>, ylabel <span class="op">=</span> <span class="st">"Loss"</span>)</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Loss Function Throughout Model Training"</span>)</span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>plt.legend(loc <span class="op">=</span> <span class="st">"lower left"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Apparently, by increasing <span class="math inline">\(\alpha\)</span> to <span class="math inline">\(10,000\)</span>, we prevented the logistic regression model with Newton’s optimizer from converging to a solution. In fact, with <span class="math inline">\(\alpha\)</span> set so high, the model produces a loss value of <code>NaN</code>, terminating our training loop in a single iteration.</p>
+<div id="cell-14" class="cell" data-execution_count="11">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DELETE?!?!</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ORRRR DID IT CONVERGE IN A SINGLE GO?</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># # plot decision boundary</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># fig, ax = plt.subplots(figsize = (5, 5))</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># plot_data(X, y, ax)</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># draw_line(LR_newton_10000.w, x_min = -1.25, x_max = 2.25, ax = ax, color = "black")</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># ax.set_title("Training Data and Decision Boundaries");</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -396,77 +447,39 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>In this scenario, the loss function of gradient descent with momentum decreased slightly more rapidly than regular gradient descent. To be fully transparent, producing a scenario with this improvement involved some fishing for appropriate data and <span class="math inline">\(\alpha\)</span>. In this case, gradient descent with momentum performed slightly better than regular gradient descent, but this is by no means a guarantee.</p>
 </section>
-<section id="the-perils-of-overfitting" class="level3">
-<h3 class="anchored" data-anchor-id="the-perils-of-overfitting">The Perils of Overfitting</h3>
-<p>In this section, we construct a scenario where logistic regression overfits to the training data. To accomplish this task, we fit a model on data with substantially more dimensions than observations. Specifically, we generate training data and test data which both contain 30 dimensions and 20 observations, using a function for generating classification data generously provided by Professor Chodrow. Then we fit our logistic regression model on our training data, resulting in the evolution of our loss function as illustrated below.</p>
-<div id="cell-17" class="cell" data-execution_count="8">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1234</span>)</span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># generate data</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>X_train, y_train <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">20</span>, noise <span class="op">=</span> <span class="fl">0.5</span>, p_dims <span class="op">=</span> <span class="dv">30</span>)</span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>X_test, y_test <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">20</span>, noise <span class="op">=</span> <span class="fl">0.5</span>, p_dims <span class="op">=</span> <span class="dv">30</span>)</span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize logistic regression model and optimizer</span></span>
-<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>LR <span class="op">=</span> LogisticRegression() </span>
-<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(LR)</span>
-<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a><span class="co"># initialize vector to record loss values</span></span>
-<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>loss_vec_overfit <span class="op">=</span> []</span>
-<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100</span>):</span>
-<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
-<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    opt.step(X_train, y_train, alpha <span class="op">=</span> <span class="fl">0.1</span>, beta <span class="op">=</span> <span class="fl">0.9</span>)</span>
-<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># calculate and record loss</span></span>
-<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a>    loss <span class="op">=</span> LR.loss(X_train, y_train) </span>
-<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a>    loss_vec_overfit.append(loss)</span>
-<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> loss <span class="op">==</span> <span class="dv">0</span>:</span>
-<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a>        <span class="cf">break</span></span>
-<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the changes in loss </span></span>
-<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_overfit, color <span class="op">=</span> <span class="st">"slategrey"</span>)</span>
-<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a>labs <span class="op">=</span> plt.gca().<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="st">"Iteration"</span>, ylabel <span class="op">=</span> <span class="st">"Loss"</span>)</span>
-<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Loss Function Throughout Model Training"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/cell-9-output-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
-<p>In this figure, we find that our loss function decreased in the same monotonic manner as before, converging to a decision boundary with a loss value of less than 0.1. Below, we calculate the training accuracy of our model.</p>
-<div id="cell-19" class="cell" data-execution_count="9">
-<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute training accuracy</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>y_hat <span class="op">=</span> LR.predict(X_train)</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>train_accuracy <span class="op">=</span> (<span class="fl">1.0</span><span class="op">*</span>(y_hat <span class="op">==</span> y_train)).mean().item()</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>train_accuracy</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="9">
-<pre><code>1.0</code></pre>
-</div>
-</div>
-<p>At 100% training accuracy, our model is correctly predicting the outcome variable of every observation in our training data. But what about testing accuracy?</p>
-<div id="cell-21" class="cell" data-execution_count="10">
-<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Compute testing accuracy</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>y_hat <span class="op">=</span> LR.predict(X_test)</span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>test_accuracy <span class="op">=</span> (<span class="fl">1.0</span><span class="op">*</span>(y_hat <span class="op">==</span> y_test)).mean().item()</span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>test_accuracy</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="10">
-<pre><code>0.6499999761581421</code></pre>
-</div>
-</div>
-<p>At roughly 65%, our testing accuracy is not nearly as high as our training accuracy. Our model appears to have been overfit to our training data, failing to generalize to test data that was generated in a similar manner. Why might this have happened?</p>
-<p>I suspect that 20 observations of training points is simply insufficient for training a model in 30 dimensional space. There are so many possibilities for where a point can be located in 30 dimensional space, and 20 observations barely scratches the surface of these possibilities. Our model would need substantially more training data in order to have been exposed to enough of these possibilities. In the absence of sufficient training data, our model reflects the noise of our training data rather than the underlying pattern.</p>
-</section>
+<section id="operation-counting" class="level2">
+<h2 class="anchored" data-anchor-id="operation-counting">Operation Counting</h2>
+<p>Let <span class="math inline">\(C_{gd}\)</span> represent the total computational cost of fitting a logistic regression model with gradient descent and <span class="math inline">\(C_{nm}\)</span> represent the total computational cost of fitting a logistic regression model with Newton’s method.</p>
+<p>Suppose that gradient descent converges to an adequate solution in <span class="math inline">\(t_{gd}\)</span> iterations and Newton’s method converges to an adequate solution in <span class="math inline">\(t_{nm}\)</span> iterations. Furthermore, per Professor Chodrow’s instructions, we assume that the following operations are associated with the following computational costs.</p>
+<ul>
+<li>Computing the loss: <span class="math inline">\(c\)</span> computational units</li>
+<li>Computing the gradient: <span class="math inline">\(2c\)</span> units</li>
+<li>Computing the Hessian: <span class="math inline">\(pc\)</span> units</li>
+<li>Inverting a <span class="math inline">\(p \times p\)</span> matrix: <span class="math inline">\(k_1p^Y\)</span> units (QUESTION: GREEK LETTER NOT Y?)</li>
+<li>Performing the matrix-vector multiplication required by Newton’s method: <span class="math inline">\(k_2p^2\)</span></li>
+</ul>
+<p>In each iteration of gradient descent, we calculate the loss and the gradient once, leading to the following total computational cost.</p>
+<p><span class="math inline">\(C_{gd} = t_{gd} (c + 2c) = t_{gd}(3c)\)</span></p>
+<p>In each iteration of Newton’s method, we calculate the loss, Hessian, inverse Hessian, matrix multiplication, and gradient once, leading to the following total computational cost. GREEK LETTER BELOW TOO</p>
+<p><span class="math inline">\(C_{nm} = t_{nm}(c + pc + k_1p^Y + k_2p^2 + 2c) = t_{nm}(3c + pc + k_1p^Y + k_2p^2)\)</span></p>
+<p>If Newton’s method requires fewer computational units to complete than gradient descent, we have the following inequalities.</p>
+<p><span class="math display">\[C_{nm} &lt; C_{gd}\]</span> <span class="math display">\[t_{nm}(3c + pc + k_1p^Y + k_2p^2) &lt; t_{gd}(3c)\]</span> <span class="math display">\[\frac{(3c + pc + k_1p^Y + k_2p^2)}{3c} &lt; \frac{t_{gd}}{t_{nm}}\]</span></p>
+<p>Thus, Newton’s method will only require less computational effort than gradient descent if the total number of iterations required to complete gradient descent <span class="math inline">\(t_{gd}\)</span> is at least <span class="math inline">\(\frac{(3c + pc + k_1p^Y + k_2p^2)}{3c}\)</span> times as much as the number of iterations required to complete Newton’s method.</p>
+<p>Since <span class="math inline">\(p\)</span> is raised to the power of <span class="math inline">\(2\)</span> and to the power of <span class="math inline">\(Y\)</span> (GREEK LETTER??) in this formula, the ratio between <span class="math inline">\(t_{gd}\)</span> and <span class="math inline">\(t_{nm}\)</span> required for Newton’s method to be more efficient than gradient descent increases dramatically as <span class="math inline">\(p\)</span> increases. Practically speaking, when working with datasets of many variables, this is unlikely to happen. For this reason, if working on a dataset with many variables, gradient descent will almost certainly be more efficient than Newton’s method.</p>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>In this assignment, we implemented logistic regression via empirical risk minimization within the object-oriented framework provided by Professor Chodrow. We investigated the differences between regular gradient descent and gradient descent with momentum, discovering that the latter option converges to a solution more rapidly in some cases. We also illustrated that logistic regression tends to overfit when the training data has more dimensions than observations. Implementing logistic regression and experimenting with the model’s parameters furthered my understanding of logistic regression in particular and gradient descent more broadly.</p>
+</section>
+<section id="to-do" class="level2">
+<h2 class="anchored" data-anchor-id="to-do">TO DO</h2>
+<ul>
+<li>proofread</li>
+<li>greek letter?</li>
+<li>double check computational complexity work</li>
+<li>double check when <span class="math inline">\(\alpha\)</span> is too large, finish discussion there</li>
+<li>write abstract and conclusion</li>
+</ul>
 
 
 </section>

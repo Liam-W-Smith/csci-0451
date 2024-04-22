@@ -6,8 +6,11 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="author" content="Liam Smith">
+<meta name="dcterms.date" content="2024-04-18">
+<meta name="description" content="Learning about the theory, implementation, and applications of machine learning and deep learning.">
 
-<title>My Awesome CSCI 0451 Blog</title>
+<title>My Awesome CSCI 0451 Blog - GeoAI at the American Association of Geographers’ 2024 Annual Meeting</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,24 +26,22 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-listing/list.min.js"></script>
-<script src="site_libs/quarto-listing/quarto-listing.js"></script>
-<script src="site_libs/quarto-html/quarto.js"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+<script src="../../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../../">
+<script src="../../site_libs/quarto-html/quarto.js"></script>
+<script src="../../site_libs/quarto-html/popper.min.js"></script>
+<script src="../../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../../site_libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../../site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -68,35 +69,6 @@ ul.task-list li input[type="checkbox"] {
     "search-label": "Search"
   }
 }</script>
-<script>
-
-  window.document.addEventListener("DOMContentLoaded", function (_event) {
-    const listingTargetEl = window.document.querySelector('#listing-listing .list');
-    if (!listingTargetEl) {
-      // No listing discovered, do not attach.
-      return; 
-    }
-
-    const options = {
-      valueNames: ['listing-date','listing-title','listing-author','listing-image','listing-description','listing-categories',{ data: ['index'] },{ data: ['categories'] },{ data: ['listing-date-sort'] },{ data: ['listing-file-modified-sort'] }],
-      
-      searchColumns: ["listing-date","listing-title","listing-author","listing-image","listing-description","listing-categories"],
-    };
-
-    window['quarto-listings'] = window['quarto-listings'] || {};
-    window['quarto-listings']['listing-listing'] = new List('listing-listing', options);
-
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  });
-
-  window.addEventListener('hashchange',() => {
-    if (window['quarto-listing-loaded']) {
-      window['quarto-listing-loaded']();
-    }
-  })
-  </script>
 <style>
 
       .quarto-title-block .quarto-title-banner h1,
@@ -111,52 +83,23 @@ ul.task-list li input[type="checkbox"] {
 
       .quarto-title-block .quarto-title-banner {
         color: white;
-background-image: url(img/landscape.png);
+background-image: url(../../img/landscape.png);
 background-size: cover;
       }
 </style>
 
-  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
 
-<script type="text/javascript">
-const typesetMath = (el) => {
-  if (window.MathJax) {
-    // MathJax Typeset
-    window.MathJax.typeset([el]);
-  } else if (window.katex) {
-    // KaTeX Render
-    var mathElements = el.getElementsByClassName("math");
-    var macros = [];
-    for (var i = 0; i < mathElements.length; i++) {
-      var texText = mathElements[i].firstChild;
-      if (mathElements[i].tagName == "SPAN") {
-        window.katex.render(texText.data, mathElements[i], {
-          displayMode: mathElements[i].classList.contains('display'),
-          throwOnError: false,
-          macros: macros,
-          fleqn: false
-        });
-      }
-    }
-  }
-}
-window.Quarto = {
-  typesetMath
-};
-</script>
-
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="../../styles.css">
 </head>
 
-<body class="nav-fixed">
+<body class="nav-fixed fullcontent">
 
 <div id="quarto-search-results"></div>
   <header id="quarto-header" class="headroom fixed-top quarto-banner">
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../../index.html">
     <span class="navbar-title">My Awesome CSCI 0451 Blog</span>
     </a>
   </div>
@@ -167,7 +110,7 @@ window.Quarto = {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll ms-auto">
   <li class="nav-item">
-    <a class="nav-link" href="./about.html"> 
+    <a class="nav-link" href="../../about.html"> 
 <span class="menu-text">About</span></a>
   </li>  
   <li class="nav-item compact">
@@ -190,184 +133,81 @@ window.Quarto = {
 <!-- content -->
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
-    <div class="quarto-title column-page-left">
-      <h1 class="title">My Awesome CSCI 0451 Blog</h1>
-                      </div>
+    <div class="quarto-title column-body">
+      <h1 class="title">GeoAI at the American Association of Geographers’ 2024 Annual Meeting</h1>
+                  <div>
+        <div class="description">
+          Learning about the theory, implementation, and applications of machine learning and deep learning.
+        </div>
+      </div>
+                </div>
   </div>
     
   
-  <div class="quarto-title-meta column-page-left">
+  <div class="quarto-title-meta">
 
+      <div>
+      <div class="quarto-title-meta-heading">Author</div>
+      <div class="quarto-title-meta-contents">
+               <p>Liam Smith </p>
+            </div>
+    </div>
       
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 18, 2024</p>
+      </div>
+    </div>
     
       
     </div>
     
   
-  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-full page-navbar">
+  </header><div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
 <!-- sidebar -->
 <!-- margin-sidebar -->
-    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
-        
-    <h5 class="quarto-listing-category-title">Categories</h5><div class="quarto-listing-category category-default"><div class="category" data-category="">All <span class="quarto-category-count">(5)</span></div></div></div>
+    
 <!-- main -->
-<main class="content quarto-banner-title-block column-page-left" id="quarto-document-content">
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
 
 
 
 
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>This week I’m writing from Honolulu, Hawaii, where I am presenting my summer research at the American Association of Geographers’ Annual Meeting. This is the first academic conference I have attended, and I am excited to present my work as well as connect with others in the field and learn from their work. I’m particularly interested in the applications of machine learning towards remote sensing, so I am making an effort to attend presentations and workshops on the topic.</p>
+</section>
+<section id="presentations" class="level2">
+<h2 class="anchored" data-anchor-id="presentations">Presentations</h2>
+<p>On Wednesday, April 17, I attended a session on GeoAI for Feature Detection and Recognition.</p>
+<p><strong>Context-Enhanced Small Object Detection through High-Resolution Remote Sensing Imagery</strong> - Goal: detect cars on roads - Process: - Segmented roads - Looked for cars on the roads - Developed a new algorithm - Compared her algorithm to preexisting ones</p>
+<p><strong>Classification of USGS 3DEP LiDAR Point Clouds Using Deep Learning Models</strong> - Goal: improve classification of USGS point clouds into different objects such as vegetation, water, and buildings - Goal 2: develop an open-source tool that others can use to do the same - Has achieved partial success but needs further work in order to better identify water and bridge featuers</p>
+<p><strong>Examining Machine and Deep Learning Techniques to Predict Almond Crop Locations in Central Valley California Using Remote Sensing Technologies</strong> - Goal: identify almond agriculture in Central Valley California - Basically he fit a bunch of traditional machine learning models as well as a bunch of deep learning models and compared their results - Overall, all of the algorithms performed with at least 90% accuracy, so he spoke about how it might be better to go with a simpler model like linear regression or random forest even though some of the deep learning models performed a few percent better</p>
+<p><strong>From Grapes to Pixels: Advanced Deep Learning Techniques in Stellenbosch Vineyard Management</strong> - This project was honestly very similar to the almond crop prediction project - The author of both of these studies are PhD students at the University of Florida - This project’s goal was to detect certain types of vineyards in Stellenbosch, South Africa - He fit a wide range of models and assessed their performance with several different metrics, discussing which one might be the best one for th etask</p>
+<p><strong>Overall reflections</strong> - I found it interesting learning how different models performed in different situations, but to be honest, it sort of felt like less of a science. When you take a bunch of data and throw 15 models at it, without some discussion of the theory of why one model might do better than the others, it sort of feels less like scientific inquiry and more like an art of matching the right algorithm to the given situation. - I also think that none of the presenters communicated why their work was relevant or important. As a member of the audience, it sort of felt like they were just fitting machine learning or deep learning algorithms on seemingly random datasets or maybe they just chose their datasets because the data was easily accessible. I’m more interested in how these tools can be used to solve tangible and meaningful problems. Perhaps some or all of these presentations do have legitimate applications that matter, but the presenters did not make that clear. I also think the presentations would have been more engaging had that been included.</p>
+</section>
+<section id="workshop" class="level2">
+<h2 class="anchored" data-anchor-id="workshop">Workshop</h2>
+<ul>
+<li><p>powerpoint, link to it</p></li>
+<li><p>mention tutorials, link to their github: https://github.com/bparment1/deep_learning_with_satellite_imagery_and_geospatial_data?tab=readme-ov-file</p></li>
+</ul>
+</section>
+<section id="small-example" class="level2">
+<h2 class="anchored" data-anchor-id="small-example">Small Example</h2>
+</section>
+<section id="also" class="level2">
+<h2 class="anchored" data-anchor-id="also">ALSO:</h2>
+<ul>
+<li>Phil’s thoughts: pretty interesting! An ideal blog post would both reflect on your experience and do some follow-up. For example, did any of the presenters talk about papers which are published? You could pick some of those to read and then do some technical description of the data sets, models, and algorithms involved.</li>
+</ul>
 
 
+</section>
 
-
-<div class="quarto-listing quarto-listing-container-default" id="listing-listing">
-<div class="list quarto-listing-default">
-<div class="quarto-post image-right" data-index="0" data-listing-date-sort="1713434400000" data-listing-file-modified-sort="1713473579361" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="603">
-<div class="thumbnail">
-<p><a href="./posts/AAG-GeoAI/index.html" class="no-external"></a></p><a href="./posts/AAG-GeoAI/index.html" class="no-external">
-<p><img src="./posts/AAG-GeoAI/hawaii.jpg" class="thumbnail-image"></p>
-</a><p><a href="./posts/AAG-GeoAI/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/AAG-GeoAI/index.html" class="no-external">GeoAI at the American Association of Geographers’ 2024 Annual Meeting</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/AAG-GeoAI/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./posts/AAG-GeoAI/index.html" class="no-external">Learning about the theory, implementation, and applications of machine learning and deep learning.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./posts/AAG-GeoAI/index.html" class="no-external">
-<div class="listing-date">
-Apr 18, 2024
-</div>
-<div class="listing-author">
-Liam Smith
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="1" data-listing-date-sort="1713175200000" data-listing-file-modified-sort="1713215585259" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="798">
-<div class="thumbnail">
-<p><a href="./posts/newtons-method/index.html" class="no-external"></a></p><a href="./posts/newtons-method/index.html" class="no-external">
-<p><img src="./posts/newtons-method/graph.png" class="thumbnail-image"></p>
-</a><p><a href="./posts/newtons-method/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/newtons-method/index.html" class="no-external">Implementing Newton’s Method for Logistic Regression</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/newtons-method/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./posts/newtons-method/index.html" class="no-external">Implementing logistic regression using Newton’s Method.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./posts/newtons-method/index.html" class="no-external">
-<div class="listing-date">
-Apr 15, 2024
-</div>
-<div class="listing-author">
-Liam Smith
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="2" data-listing-date-sort="1712138400000" data-listing-file-modified-sort="1713766029064" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="4" data-listing-word-count-sort="779">
-<div class="thumbnail">
-<p><a href="./posts/logistic-regression/index.html" class="no-external"></a></p><a href="./posts/logistic-regression/index.html" class="no-external">
-<p><img src="./posts/logistic-regression/graph.png" class="thumbnail-image"></p>
-</a><p><a href="./posts/logistic-regression/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/logistic-regression/index.html" class="no-external">Implementing Logistic Regression</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/logistic-regression/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./posts/logistic-regression/index.html" class="no-external">Implementing logistic regression using gradient descent with momentum.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./posts/logistic-regression/index.html" class="no-external">
-<div class="listing-date">
-Apr 3, 2024
-</div>
-<div class="listing-author">
-Liam Smith
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="3" data-listing-date-sort="1711965600000" data-listing-file-modified-sort="1712023311879" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="12" data-listing-word-count-sort="2229">
-<div class="thumbnail">
-<p><a href="./posts/perceptron/index.html" class="no-external"></a></p><a href="./posts/perceptron/index.html" class="no-external">
-<p><img src="./posts/perceptron/graph.png" class="thumbnail-image"></p>
-</a><p><a href="./posts/perceptron/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/perceptron/index.html" class="no-external">Implementing Perceptron</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/perceptron/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./posts/perceptron/index.html" class="no-external">Implementing one of the oldest machine learning models from scratch.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./posts/perceptron/index.html" class="no-external">
-<div class="listing-date">
-Apr 1, 2024
-</div>
-<div class="listing-author">
-Liam Smith
-</div>
-</a>
-</div>
-</div>
-<div class="quarto-post image-right" data-index="4" data-listing-date-sort="1709805600000" data-listing-file-modified-sort="1709862891147" data-listing-date-modified-sort="NaN" data-listing-reading-time-sort="7" data-listing-word-count-sort="1201">
-<div class="thumbnail">
-<p><a href="./posts/palmer-penguins/index.html" class="no-external"></a></p><a href="./posts/palmer-penguins/index.html" class="no-external">
-<p><img src="./posts/palmer-penguins/palmer_penguins.png" class="thumbnail-image"></p>
-</a><p><a href="./posts/palmer-penguins/index.html" class="no-external"></a></p>
-</div>
-<div class="body">
-<h3 class="no-anchor listing-title">
-<a href="./posts/palmer-penguins/index.html" class="no-external">Palmer Penguins</a>
-</h3>
-<div class="listing-subtitle">
-<a href="./posts/palmer-penguins/index.html" class="no-external"></a>
-</div>
-<div class="listing-description">
-<a href="./posts/palmer-penguins/index.html" class="no-external">Black box classification with the Palmer Penguins dataset.</a>
-</div>
-</div>
-<div class="metadata">
-<a href="./posts/palmer-penguins/index.html" class="no-external">
-<div class="listing-date">
-Mar 7, 2024
-</div>
-<div class="listing-author">
-Liam Smith
-</div>
-</a>
-</div>
-</div>
-</div>
-<div class="listing-no-matching d-none">
-No matching items
-</div>
-</div></main> <!-- /main -->
+</main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {
   const toggleBodyColorMode = (bsSheetEl) => {
