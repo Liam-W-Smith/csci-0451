@@ -78,9 +78,9 @@ class LogisticRegression(LinearModel):
         Computes the gradient of the binary cross-entropy loss function.
 
         ARGUMENTS: 
-            X, torch.Tensor: the observation of the feature matrix used in the current update.
+            X, torch.Tensor: the feature matrix.
 
-            y, torch.Tensor: the element of the target vector used in the current update.  
+            y, torch.Tensor: the target vector.  
 
         RETURNS: 
             g, torch.Tensor: the gradient of our loss function              
@@ -92,13 +92,23 @@ class LogisticRegression(LinearModel):
         return (1/n)*(v_*X).sum(axis = 0)
     
     def hessian(self, X, y):
-        ## ADD A DOC STRING?!?
+        """
+        Computes the Hessian matrix.
+
+        ARGUMENTS: 
+            X, torch.Tensor: the feature matrix.
+
+            y, torch.Tensor: the target vector.  
+
+        RETURNS: 
+            g, torch.Tensor: the gradient of our loss function              
+        """
         s = self.score(X)
         D = torch.eye(X.shape[0], X.shape[0]) * (1/(1+torch.exp(-s)))*(1 - 1/(1+torch.exp(-s)))
         return X.T@D@X
          
 
-# GradientDescentOptimizer class definition
+# Gradient descent optimizer class definition
 
 class GradientDescentOptimizer:
 
@@ -111,9 +121,9 @@ class GradientDescentOptimizer:
         and target vector y. 
 
         ARGUMENTS: 
-            X, torch.Tensor: the observation of the feature matrix used in the current update.
+            X, torch.Tensor: the feature matrix.
 
-            y, torch.Tensor: the element of the target vector used in the current update.  
+            y, torch.Tensor: the target vector.  
 
             alpha, float: the learning rate for regular gradient descent
 
@@ -138,6 +148,8 @@ class GradientDescentOptimizer:
         # Update old w
         self.model.w_old = temp
         
+
+# Newton optimizer class definition
 
 class NewtonOptimizer:
 

@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Liam Smith">
-<meta name="dcterms.date" content="2024-04-15">
-<meta name="description" content="Implementing logistic regression using Newton’s Method.">
+<meta name="dcterms.date" content="2024-04-21">
+<meta name="description" content="A comparison between two optimization algorithms for logistic regression.">
 
-<title>My Awesome CSCI 0451 Blog - Implementing Newton’s Method for Logistic Regression</title>
+<title>My Awesome CSCI 0451 Blog - Newton’s Method for Logistic Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -197,10 +197,10 @@ window.Quarto = {
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">Implementing Newton’s Method for Logistic Regression</h1>
+      <h1 class="title">Newton’s Method for Logistic Regression</h1>
                   <div>
         <div class="description">
-          Implementing logistic regression using Newton’s Method.
+          A comparison between two optimization algorithms for logistic regression.
         </div>
       </div>
                 </div>
@@ -219,7 +219,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">April 15, 2024</p>
+        <p class="date">April 21, 2024</p>
       </div>
     </div>
     
@@ -240,7 +240,7 @@ window.Quarto = {
 
 <section id="abstract" class="level2">
 <h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
-<p>Write it! Link this: <a href="logistic.py">logistic.py</a></p>
+<p>In this blog post, we expand upon our previous implementation of logistic regression to add another optimization option. In our updated implementation of logistic regression, available at <a href="logistic.py">logistic.py</a>, we can now optimize our logistic regression model with both gradient descent (with momentum) and Newton’s method. After implementing this extension, we demonstrate with an example that logistic regression with both optimizers converges to the same solution. Using the same example, we reveal that logistic regression with Newton’s method commonly converges to a solution in fewer training iterations than gradient descent. We also illustrate that selecting an appropriate value for <span class="math inline">\(\alpha\)</span> is critical to Newton’s method, as the optimizer will not converge to a solution if <span class="math inline">\(\alpha\)</span> is too large. Finally, we count the number of operations required in each iteration of model training for both gradient descent and Newton’s method, revealing that Newton’s method is more computationally expensive than gradient descent, especially when working with many features.</p>
 </section>
 <section id="generating-training-data" class="level2">
 <h2 class="anchored" data-anchor-id="generating-training-data">Generating Training Data</h2>
@@ -256,7 +256,7 @@ window.Quarto = {
 </div>
 <p>Next, we generate the data that we will use to train our model. Thank you to Professor Chodrow for providing the functions for generating and visualizing training data.</p>
 <div id="cell-4" class="cell" data-execution_count="2">
-<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Define function to generate data</span></span>
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define function to generate data</span></span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> classification_data(n_points <span class="op">=</span> <span class="dv">300</span>, noise <span class="op">=</span> <span class="fl">0.2</span>, p_dims <span class="op">=</span> <span class="dv">2</span>):</span>
 <span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    </span>
 <span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> torch.arange(n_points) <span class="op">&gt;=</span> <span class="bu">int</span>(n_points<span class="op">/</span><span class="dv">2</span>)</span>
@@ -373,7 +373,7 @@ window.Quarto = {
 </section>
 <section id="the-speed-of-newtons-optimizer" class="level2">
 <h2 class="anchored" data-anchor-id="the-speed-of-newtons-optimizer">The Speed of Newton’s Optimizer</h2>
-<p>In the previous section we saw that logistic regression with gradient descent and Newton’s method converge to the same solution. Naturally, one might wonder: do they approach the solution at the same rate? As it turns out, when an appropriate value of <span class="math inline">\(\alpha\)</span> is selected, logistic regression with Newton’s optimizer converges to a solution in far fewer iterations than logistic regression with classic gradient descent. To illustrate this statement, we plot the change in loss over the iterations of both models’ training.</p>
+<p>In the previous section we saw that logistic regression with gradient descent and Newton’s method converge to the same solution. Naturally, one might wonder whether both options approach the solution at the same rate. As it turns out, when an appropriate value of <span class="math inline">\(\alpha\)</span> is selected, logistic regression with Newton’s optimizer converges to a solution in far fewer iterations than logistic regression with classic gradient descent. To illustrate this statement, we plot the change in loss over the iterations of both models’ training.</p>
 <div id="cell-10" class="cell" data-execution_count="5">
 <div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot the changes in loss </span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>plt.plot(loss_vec_gradient, color <span class="op">=</span> <span class="st">"slategrey"</span>, lw <span class="op">=</span> <span class="dv">3</span>, label <span class="op">=</span> <span class="st">"Gradient Descent"</span>)</span>
@@ -389,12 +389,12 @@ window.Quarto = {
 </div>
 </div>
 </div>
-<p>As we would expect, the two optimizers begin with identical loss values. However, from the very beginning, the loss values of logistic regression with Newton’s optimizer decrease more rapidly than logistic regression with gradient descent. In fact, Newton’s approach achieves an incremental improvement to the loss function of less than our threshold of <span class="math inline">\(0.00001\)</span> in just over <span class="math inline">\(200\)</span> iterations, whereas the gradient descent approach requires over <span class="math inline">\(1,100\)</span> iterations. For this data and this choice of <span class="math inline">\(\alpha\)</span>, the Newton’s optimizer approach requires dramatically fewer iterations than the regular gradient descent.</p>
+<p>As we would expect, the two optimizers begin with identical loss values. However, from the very beginning, the loss values of logistic regression with Newton’s optimizer decrease more rapidly than logistic regression with gradient descent. In fact, Newton’s approach achieves an incremental improvement to the loss function of less than our threshold of <span class="math inline">\(0.00001\)</span> in just over <span class="math inline">\(200\)</span> iterations, whereas the gradient descent approach requires over <span class="math inline">\(1,100\)</span> iterations. For this data and this choice of <span class="math inline">\(\alpha\)</span>, the Newton’s optimizer approach requires dramatically fewer iterations than regular gradient descent.</p>
 </section>
 <section id="when-alpha-is-too-large" class="level2">
 <h2 class="anchored" data-anchor-id="when-alpha-is-too-large">When <span class="math inline">\(\alpha\)</span> is Too Large</h2>
 <p>The learning rate <span class="math inline">\(\alpha\)</span> impacts how far logistic regression with Newton’s method moves the decision boundary in any given iteration. When <span class="math inline">\(\alpha\)</span> is very small, each change to the decision boundary becomes similarly small, such that it takes many iterations to converge to an adequate solution. In the example above, <span class="math inline">\(\alpha\)</span> was large enough that logistic regression with Newton’s optimizer converged to a solution more rapidly than ordinary gradient descent. But what happens when <span class="math inline">\(\alpha\)</span> is substantially larger? To answer this question, we experiment with fitting a model where <span class="math inline">\(\alpha = 10,000\)</span> in the code chunk below.</p>
-<div id="cell-12" class="cell" data-execution_count="14">
+<div id="cell-12" class="cell" data-execution_count="6">
 <div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># reset seed</span></span>
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1234</span>)</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
@@ -430,23 +430,7 @@ window.Quarto = {
 Resulting loss vector [tensor(nan)]</code></pre>
 </div>
 </div>
-<p>Apparently, by increasing <span class="math inline">\(\alpha\)</span> to <span class="math inline">\(10,000\)</span>, we prevented the logistic regression model with Newton’s optimizer from converging to a solution. In fact, with <span class="math inline">\(\alpha\)</span> set so high, the model produces a loss value of <code>NaN</code>, terminating our training loop in a single iteration.</p>
-<div id="cell-14" class="cell" data-execution_count="11">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># DELETE?!?!</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co"># ORRRR DID IT CONVERGE IN A SINGLE GO?</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co"># # plot decision boundary</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co"># fig, ax = plt.subplots(figsize = (5, 5))</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co"># plot_data(X, y, ax)</span></span>
-<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co"># draw_line(LR_newton_10000.w, x_min = -1.25, x_max = 2.25, ax = ax, color = "black")</span></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co"># ax.set_title("Training Data and Decision Boundaries");</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display">
-<div>
-<figure class="figure">
-<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
-</figure>
-</div>
-</div>
-</div>
+<p>Apparently, by increasing <span class="math inline">\(\alpha\)</span> to <span class="math inline">\(10,000\)</span>, we prevented the logistic regression model with Newton’s optimizer from converging to a solution. In fact, with <span class="math inline">\(\alpha\)</span> set so high, the model produces a loss value of <code>NaN</code>, terminating our training loop in a single iteration. This likely occured because the large value of <span class="math inline">\(\alpha\)</span> caused the decision boundary to move so far that the loss function’s value exceeded the maximum value that torch can store.</p>
 </section>
 <section id="operation-counting" class="level2">
 <h2 class="anchored" data-anchor-id="operation-counting">Operation Counting</h2>
@@ -456,30 +440,21 @@ Resulting loss vector [tensor(nan)]</code></pre>
 <li>Computing the loss: <span class="math inline">\(c\)</span> computational units</li>
 <li>Computing the gradient: <span class="math inline">\(2c\)</span> units</li>
 <li>Computing the Hessian: <span class="math inline">\(pc\)</span> units</li>
-<li>Inverting a <span class="math inline">\(p \times p\)</span> matrix: <span class="math inline">\(k_1p^Y\)</span> units (QUESTION: GREEK LETTER NOT Y?)</li>
+<li>Inverting a <span class="math inline">\(p \times p\)</span> matrix: <span class="math inline">\(k_1p^\gamma\)</span> units</li>
 <li>Performing the matrix-vector multiplication required by Newton’s method: <span class="math inline">\(k_2p^2\)</span></li>
 </ul>
 <p>In each iteration of gradient descent, we calculate the loss and the gradient once, leading to the following total computational cost.</p>
 <p><span class="math inline">\(C_{gd} = t_{gd} (c + 2c) = t_{gd}(3c)\)</span></p>
-<p>In each iteration of Newton’s method, we calculate the loss, Hessian, inverse Hessian, matrix multiplication, and gradient once, leading to the following total computational cost. GREEK LETTER BELOW TOO</p>
-<p><span class="math inline">\(C_{nm} = t_{nm}(c + pc + k_1p^Y + k_2p^2 + 2c) = t_{nm}(3c + pc + k_1p^Y + k_2p^2)\)</span></p>
+<p>In each iteration of Newton’s method, we calculate the loss, Hessian, inverse Hessian, matrix multiplication, and gradient once, leading to the following total computational cost.</p>
+<p><span class="math inline">\(C_{nm} = t_{nm}(c + pc + k_1p^\gamma + k_2p^2 + 2c) = t_{nm}(3c + pc + k_1p^\gamma + k_2p^2)\)</span></p>
 <p>If Newton’s method requires fewer computational units to complete than gradient descent, we have the following inequalities.</p>
-<p><span class="math display">\[C_{nm} &lt; C_{gd}\]</span> <span class="math display">\[t_{nm}(3c + pc + k_1p^Y + k_2p^2) &lt; t_{gd}(3c)\]</span> <span class="math display">\[\frac{(3c + pc + k_1p^Y + k_2p^2)}{3c} &lt; \frac{t_{gd}}{t_{nm}}\]</span></p>
-<p>Thus, Newton’s method will only require less computational effort than gradient descent if the total number of iterations required to complete gradient descent <span class="math inline">\(t_{gd}\)</span> is at least <span class="math inline">\(\frac{(3c + pc + k_1p^Y + k_2p^2)}{3c}\)</span> times as much as the number of iterations required to complete Newton’s method.</p>
-<p>Since <span class="math inline">\(p\)</span> is raised to the power of <span class="math inline">\(2\)</span> and to the power of <span class="math inline">\(Y\)</span> (GREEK LETTER??) in this formula, the ratio between <span class="math inline">\(t_{gd}\)</span> and <span class="math inline">\(t_{nm}\)</span> required for Newton’s method to be more efficient than gradient descent increases dramatically as <span class="math inline">\(p\)</span> increases. Practically speaking, when working with datasets of many variables, this is unlikely to happen. For this reason, if working on a dataset with many variables, gradient descent will almost certainly be more efficient than Newton’s method.</p>
+<p><span class="math display">\[C_{nm} &lt; C_{gd}\]</span> <span class="math display">\[t_{nm}(3c + pc + k_1p^\gamma + k_2p^2) &lt; t_{gd}(3c)\]</span> <span class="math display">\[\frac{(3c + pc + k_1p^\gamma + k_2p^2)}{3c} &lt; \frac{t_{gd}}{t_{nm}}\]</span></p>
+<p>Thus, Newton’s method will only require less computational effort than gradient descent if the total number of iterations required to complete gradient descent <span class="math inline">\(t_{gd}\)</span> is at least <span class="math inline">\(\frac{(3c + pc + k_1p^\gamma + k_2p^2)}{3c}\)</span> times as much as the number of iterations required to complete Newton’s method.</p>
+<p>Since <span class="math inline">\(p\)</span> is raised to the power of <span class="math inline">\(2\)</span> and to the power of <span class="math inline">\(\gamma\)</span> in this formula, the ratio between <span class="math inline">\(t_{gd}\)</span> and <span class="math inline">\(t_{nm}\)</span> required for Newton’s method to be more efficient than gradient descent increases dramatically as <span class="math inline">\(p\)</span> increases. Practically speaking, when working with datasets of many variables, this is unlikely to happen. For this reason, if working on a dataset with many variables, gradient descent will almost certainly be more efficient than Newton’s method.</p>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-</section>
-<section id="to-do" class="level2">
-<h2 class="anchored" data-anchor-id="to-do">TO DO</h2>
-<ul>
-<li>proofread</li>
-<li>greek letter?</li>
-<li>double check computational complexity work</li>
-<li>double check when <span class="math inline">\(\alpha\)</span> is too large, finish discussion there</li>
-<li>write abstract and conclusion</li>
-</ul>
+<p>Completing this assignment gave me the opportunity to understand the strengths and weaknesses of two different optimization methods for logistic regression. By implementing and performing experiments with both gradient descent and Newton’s method, I learned that Newton’s method may converge to an adequate solution in fewer training iterations than gradient descent. By counting the number of operations required for both optimizers, I discovered that fewer iterations does not necessarily mean lower computational complexity. In fact, when working with a large number of features, gradient descent is almost certainly less computationally expensive than Newton’s method. In summary, if given the choice between gradient descent and Newton’s method, choose gradient descent!</p>
 
 
 </section>

@@ -2,8 +2,8 @@
   {
     "listing": "/index.html",
     "items": [
-      "/posts/AAG-GeoAI/index.html",
       "/posts/newtons-method/index.html",
+      "/posts/AAG-GeoAI/index.html",
       "/posts/logistic-regression/index.html",
       "/posts/perceptron/index.html",
       "/posts/palmer-penguins/index.html"
