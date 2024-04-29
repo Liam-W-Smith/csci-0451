@@ -7,10 +7,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Liam Smith">
-<meta name="dcterms.date" content="2024-04-29">
-<meta name="description" content="Modern research applications of machine learning and deep learning in remote sensing.">
+<meta name="dcterms.date" content="2024-04-26">
+<meta name="description" content="….">
 
-<title>My Awesome CSCI 0451 Blog - GeoAI at the American Association of Geographers’ 2024 Annual Meeting</title>
+<title>My Awesome CSCI 0451 Blog - Sparse Kernelized Logistic Regression</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -22,6 +22,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -88,6 +122,35 @@ background-size: cover;
       }
 </style>
 
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
 
 <link rel="stylesheet" href="../../styles.css">
 </head>
@@ -134,10 +197,10 @@ background-size: cover;
 <header id="title-block-header" class="quarto-title-block default page-columns page-full">
   <div class="quarto-title-banner page-columns page-full">
     <div class="quarto-title column-body">
-      <h1 class="title">GeoAI at the American Association of Geographers’ 2024 Annual Meeting</h1>
+      <h1 class="title">Sparse Kernelized Logistic Regression</h1>
                   <div>
         <div class="description">
-          Modern research applications of machine learning and deep learning in remote sensing.
+          ….
         </div>
       </div>
                 </div>
@@ -156,7 +219,7 @@ background-size: cover;
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">April 29, 2024</p>
+        <p class="date">April 26, 2024</p>
       </div>
     </div>
     
@@ -175,37 +238,152 @@ background-size: cover;
 
 
 
-<section id="introduction" class="level2">
-<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>Last week, I travelled to Honolulu, Hawaii, where I presented my summer research at the American Association of Geographers’ Annual Meeting. This was my first academic conference, and it was exciting to connect with others in the field and learn from their work. I am particularly interested in the applications of machine learning towards remote sensing, so I made an effort to attend presentations on the topic.</p>
-<p>With the emergence of large language models and the hype surrounding AI, it appears that a new buzzword – GeoAI – has taken root amongst geographers. There were a whole slew of sessions surrounding different topics in GeoAI, and on April 17, I attended the session on GeoAI for Feature Detection and Recognition. In this session, graduate students and researchers presented on how they are using machine learning and deep learning methods to identify objects and perform classification on remote sensing imagery. In the following sections, I provide a summary of each presentation, as well as my personal reflections on the topic.</p>
+<section id="abstract" class="level2">
+<h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
 </section>
-<section id="context-enhanced-small-object-detection-through-high-resolution-remote-sensing-imagery" class="level2">
-<h2 class="anchored" data-anchor-id="context-enhanced-small-object-detection-through-high-resolution-remote-sensing-imagery">Context-Enhanced Small Object Detection through High-Resolution Remote Sensing Imagery</h2>
-<p>The first presentation was by Tao Jiang, who received her PhD in Biomathematics, Bioinformatics, and Computational Biology from the Chinese University of Hong Kong in 2023. Her research goal was to detect individual cars using high-resolution satellite imagery. To do so, with the assumption that all cars are found on roads, she first performed semantic segmentation on her satellite imagery to distinguish roads from non-roads. With a binary image of roads vs non-roads in hand, she then fit deep learning algorithms to search for cars exclusively within roads. As a part of her study, she developed a new deep learning methodology specifically for car identification in satellite imagery and compared the performance of her algorithm and preexisting algorithms. Her model achieved a minor improvement in the overall accuracy rate of car identification, but she intends to continue improving her model. She also wants to expand upon her current work to track changes in traffic over time. Unfortunately, I have been unable to find a publication on her work for further reading.</p>
-<p>Personally, I think it’s somewhat incredible that we can now detect individual vehicles using instruments that are not even on our planet. While there is a certain wow-factor inherent to Jiang’s research, I couldn’t help but wonder about (1) the practical applications of detecting cars on roads and (2) whether these applications would actually benefit society.</p>
-<p>There were a few minutes for questions at the end of the presentation, and one person actually asked about the applications. Jiang’s response was that in near-real-time, her model could in theory be used to identify traffic conditions. In response to that, another member of the audience chimed in, asking how that would be any improvement over the preexisting methods for assessing traffic conditions. For example, Google Maps and other services already provide relatively high quality traffic information using location data from smartphones. Jiang did not have a satisfactory response to that point. Personally, I do not see how an imagery-based traffic report would be an improvement, as smartphone GPS data is updated constantly, while satellites need to be physically above the region of interest on relatively cloudless days to be of any use.</p>
-<p>While her algorithm may not provide much improvement in identifying traffic conditions, I would imagine that her area of research would be of interest to militaries and intelligence agencies. With transfer learning, it is not difficult to imagine extending her research towards military interests like identifying specific military vehicles or various military developments. For me, this raises concerns regarding the morality of this research and the various military actors that could exploit object identification models. And more generally, the capability to identify objects as small as a car raises a whole host of privacy concerns. Gone are the days where the best available satellite imagery had 30x30 meter pixels. With imagery of high enough resolution to identify individual cars, anybody with access to high resolution imagery could snoop in your backyard from outer space without you ever knowing.</p>
+<section id="generating-training-data" class="level2">
+<h2 class="anchored" data-anchor-id="generating-training-data">Generating Training Data</h2>
+<p>First, we import the packages we will need for this assignment.</p>
+<div id="cell-2" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># import packages</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>load_ext autoreload</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>autoreload <span class="dv">2</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sparse_kernel_logistic <span class="im">import</span> KernelLogisticRegression, GradientDescentOptimizer</span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch </span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> pyplot <span class="im">as</span> plt</span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8-whitegrid'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Next, we generate the data that we will use to train our model. Thank you to Professor Chodrow for providing the functions for generating and visualizing training data.</p>
+<div id="cell-4" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define function for creating classification data</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> classification_data(n_points <span class="op">=</span> <span class="dv">300</span>, noise <span class="op">=</span> <span class="fl">0.2</span>, p_dims <span class="op">=</span> <span class="dv">2</span>):</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> torch.arange(n_points) <span class="op">&gt;=</span> <span class="bu">int</span>(n_points<span class="op">/</span><span class="dv">2</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>    y <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>y</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> y[:, <span class="va">None</span>] <span class="op">+</span> torch.normal(<span class="fl">0.0</span>, noise, size <span class="op">=</span> (n_points,p_dims))</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># X = torch.cat((X, torch.ones((X.shape[0], 1))), 1)</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    X <span class="op">=</span> X <span class="op">-</span> X.mean(dim <span class="op">=</span> <span class="dv">0</span>, keepdim <span class="op">=</span> <span class="va">True</span>)</span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> X, y</span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="co"># define function for plotting classification data</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> plot_classification_data(X, y, ax):</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">assert</span> X.shape[<span class="dv">1</span>] <span class="op">==</span> <span class="dv">2</span>, <span class="st">"This function only works for data created with p_dims == 2"</span></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    targets <span class="op">=</span> [<span class="dv">0</span>, <span class="dv">1</span>]</span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>    markers <span class="op">=</span> [<span class="st">"o"</span> , <span class="st">","</span>]</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">2</span>):</span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a>        ix <span class="op">=</span> y <span class="op">==</span> targets[i]</span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        ax.scatter(X[ix,<span class="dv">0</span>], X[ix,<span class="dv">1</span>], s <span class="op">=</span> <span class="dv">20</span>,  c <span class="op">=</span> y[ix], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"darkgrey"</span>, cmap <span class="op">=</span> <span class="st">"BrBG"</span>, vmin <span class="op">=</span> <span class="op">-</span><span class="dv">1</span>, vmax <span class="op">=</span> <span class="dv">2</span>, alpha <span class="op">=</span> <span class="fl">0.8</span>, marker <span class="op">=</span> markers[i])</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="vs">r"$x_1$"</span>, ylabel <span class="op">=</span> <span class="vs">r"$x_2$"</span>)</span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># create classification data</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.4</span>)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># plot classification data</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Training Data"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-3-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
-<section id="classification-of-usgs-3dep-lidar-point-clouds-using-deep-learning-models" class="level2">
-<h2 class="anchored" data-anchor-id="classification-of-usgs-3dep-lidar-point-clouds-using-deep-learning-models">Classification of USGS 3DEP LiDAR Point Clouds Using Deep Learning Models</h2>
-<p>In the second presentation, Jung-Kuan Liu described his efforts to create a deep learning model to classify 3DEP LiDAR point cloud data. In order to discuss his work, I should first provide some necessary context regarding 3DEP and LiDAR.</p>
-<p>First of all, 3DEP is the <a href="https://www.usgs.gov/3d-elevation-program">USGS’s 3D Elevation Program</a>, which seeks to provide open, consistent, and high-quality LiDAR elevation data across the entire United States. LiDAR stands for light detection and ranging, and LiDAR data is collected by repeatedly bouncing a laser beam from an aircraft to the ground and back, determining elevation using the amount of time it takes for the reflected beam to return to the aircraft. Combined with other information such as the scan angle, calibration, and the aircraft’s coordinates, this process is used to develop a LiDAR point cloud, which is a set of X, Y, and Z-coordinates corresponding to the locations that each laser beam struck a surface. X and Y correspond to longitude and latitude coordinates, respectively, while Z corresponds to elevation. These point clouds can be processed to develop models of the Earth’s surface such as Digital Elevation Models (DEM), which are images with a single band where each pixel’s value represents the elevation at that location. A more detailed discussion of elevation data is beyond the scope of this blog post, but for further information, a good place to start is <a href="https://oceanservice.noaa.gov/facts/lidar.html#:~:text=Lidar%2C%20which%20stands%20for%20Light,variable%20distances%20to%20the%20Earth.">NOAA’s article on LiDAR</a>.</p>
-<p>Liu works as a Physical Research Scientist at the USGS’s Center of Excellence for Geospatial Information Science, and his presentation revolved around his efforts to improve the <a href="https://www.usgs.gov/index.php/centers/community-for-data-integration-cdi/science/3deppcc-automated-dl-based-point-cloud">landcover classification of USGS’s point cloud data</a>. In particular, the USGS wants to automatically detect whether points represent vegetation, water, buildings, bridges, or other landcover. Current 3DEP standards classify points as ground, non-ground, and unclassified. This is sufficient for extracting “bare earth” DEMs, which are images where each pixel represents the elevation of the ground at that location, and Digital Surface Models (DSM), which are images where each pixel represents the elevation of the very first object that a laser would hit when beamed down from above (for example, trees and buildings). However, these current standards are insufficient for more detailed analyses surrounding the type of landcover each point represents. Liu is seeking to improve upon current standards by training deep learning models on point cloud data, and he has achieved substantial improvement in the variety of landcover classes identified via point cloud classification models. A current weak point of his model is that it is not very successful in its identification of water and bridge features. Liu indicated that water tends to absorb the wavelengths typically used in aerial LiDAR data collection, and that its low reflectance has been a particular challenge to his work.</p>
-<p>After improving upon these current weaknesses, Liu hopes to make his model available for public use. In fact, his end-goal is to develop an open-source tool that others can use to perform their own point cloud classification of 3DEP’s point cloud data without actually writing any code. The audience was interested in this product and I think it will be a welcome addition to the current 3DEP program.</p>
-</section>
-<section id="detecting-particular-types-of-agriculture-with-satellite-imagery" class="level2">
-<h2 class="anchored" data-anchor-id="detecting-particular-types-of-agriculture-with-satellite-imagery">Detecting Particular Types of Agriculture With Satellite Imagery</h2>
-<p>In this section, I will actually discuss two presentations due to the similarity in their content and methods. These presentations were delivered by two PhD students at the University of Florida, Torit Chakraborty and Mashoukur Rahaman, who conduct research for the same lab.</p>
-<p>The first of these presentations was titled <strong>From Grapes to Pixels: Advanced Deep Learning Techniques in Stellenbosch Vineyard Management</strong>, and Chakraborty’s goal in the project was to detect certain types of vineyards in Stellenbosch, South Africa. Chakraborty fit several different deep learning models, including Convolutional Neural Networks (CNN), Long Short Term Memory (LSTM), and Convo-LSTM, and assessed their performance in order to determine which model was best for the task. In addition to accurately locating vineyards, Chakraborty analyzed changes to the vineyards over time in order to assess the sustainability of Stellenbosch’s wine-tourism economy. While the level of accuracy he achieved was impressive, it was unclear to me what benefit remote sensing had over traditional methods. To my knowledge, Chakraborty has not yet published a paper on the topic, making it difficult to learn more about his methods and rationale.</p>
-<p>The second presentation was titled <strong>Examining Machine and Deep Learning Techniques to Predict Almond Crop Locations in Central Valley California Using Remote Sensing Technologies</strong>. Completed in 2023, this study was <a href="https://patron.uflib.ufl.edu/UFE0060718/00001/citation">Rahaman’s Master’s Thesis</a>, and access to his paper appears to be restricted to University of Florida faculty and students at the moment. Rahaman’s goal was to identify locations of almond agriculture in Central Valley, California. To do so, he fit a handful of traditional machine learning models including random forest, K-nearest neighbor, and logistic regression, as well as several deep learning models including Unet, MAnet, and DeepLabv3+. He then compared the performance of his models to determine which model was best for the job. He found that all of the algorithms performed with at least 90% accuracy, with the deep learning models outperforming the machine learning models by one or two percentage points. With simpler models like logistic regression and random forest performing almost as well as complex and black box deep learning architectures, Rahaman spoke to the continued value of simpler models. When a model that is explainable and interpretable has almost the same predictive power as the most sophisticated model available, perhaps it is more valuable to use the simpler model.</p>
-<p>In both of these presentations, I did not feel satisfied with the discussion of the applications of their work. Yes, it is cool that you can identify a very particular subclass of agriculture with 95% accuracy, but why does that matter? Is it just easier to perform a large-scale remote sensing analysis than to ask the farmers what they are growing? Or is the practical impact actually increased surveillance, like identifying illicit drug plantations? What benefit will this research have on humanity? There may be encouraging answers to these questions, but the presenters failed to point them out. To me, this highlights the importance of communicating not only the technical components of one’s research, but also the tangible impact one’s work could have on the world.</p>
+<section id="asdf" class="level2">
+<h2 class="anchored" data-anchor-id="asdf">asdf</h2>
+<div id="cell-6" class="cell" data-execution_count="32">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define kernel</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rbf_kernel(X_1, X_2, gamma):</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.exp(<span class="op">-</span>gamma<span class="op">*</span>torch.cdist(X_1, X_2)<span class="op">**</span><span class="dv">2</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X, rbf_kernel, lam <span class="op">=</span> <span class="fl">0.1</span>, gamma <span class="op">=</span> <span class="fl">0.1</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-7" class="cell" data-execution_count="33">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(<span class="fl">1.0</span><span class="op">*</span>(KR.a <span class="op">&gt;</span> <span class="fl">0.001</span>)).mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="33">
+<pre><code>tensor(0.)</code></pre>
+</div>
+</div>
+<div id="cell-8" class="cell" data-execution_count="34">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>KR.a.<span class="bu">max</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="34">
+<pre><code>tensor(9.3635e-06)</code></pre>
+</div>
+</div>
+<div id="cell-9" class="cell" data-execution_count="35">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>KR.loss(X, y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="35">
+<pre><code>tensor(-0.6931)</code></pre>
+</div>
+</div>
+<div id="cell-10" class="cell" data-execution_count="36">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(X[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(X[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)<span class="co">#, recompute_kernel = True)</span></span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG"</span>, </span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
+<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[ix, <span class="dv">0</span>],X[ix, <span class="dv">1</span>], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"black"</span>)<span class="op">;</span></span>
+<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># ax.scatter(X[ix, 0],X[ix, 1], facecolors = "none", edgecolors = "black")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-<p>In this session on GeoAI for Feature Detection and Recognition, I gained exposure to three different yet related areas of research within remote sensing. In the first presentation, I learned that semantic segmentation and deep learning is being used to automate detection of individual cars from satellite imagery. In the second presentation, I learned how deep learning is improving the data quality of 3DEP’s elevation data. And in the third and fourth presentations, I learned about the power of machine learning and deep learning for detecting particular subclasses of agriculture from satellite imagery. Personally, I was impressed with the level of accuracy of these models and the potential of deep learning for automating object identification.</p>
-<p>On the other hand, I was somewhat disappointed by the extent to which this research appears to be by trial and error. I’m the type of person who wants to understand exactly why something works, from the most basic assumptions to the overarching framework, as well as why a particular algorithm outperforms its alternatives. When you throw a dozen models at a problem and simply select the one with the highest accuracy, research feels less like scientific inquiry and more like an art of algorithm-matching, especially when there is no discussion of the theory behind why one model might perform better than others.</p>
-<p>Furthermore, as I mentioned earlier, I felt that some of the researchers failed to communicate why their work was relevant or important. I understand the fascination surrounding the power of deep learning, but I’m more interested in how these tools can be used to solve tangible and meaningful problems. One of my main takeaways from my first conference experience is how important it is to inform the audience not only about one’s methods, but also about the potential impacts of one’s research.</p>
+</section>
+<section id="questions" class="level1">
+<h1>Questions:</h1>
+<ul>
+<li>What is <span class="math inline">\(X_t\)</span> / how is it different from <span class="math inline">\(X\)</span>?
+<ul>
+<li>t is the training one</li>
+<li>only different when doing it on the test set</li>
+</ul></li>
+<li>Why do I have to save <span class="math inline">\(X_t\)</span> as an instance variable?
+<ul>
+<li>bc use X on test</li>
+</ul></li>
+<li>How does one do gradient descent with a?
+<ul>
+<li>Compute gradient of the loss function.</li>
+<li>First term not too bad. Second term look at lecture notes</li>
+<li>Similar to w</li>
+<li>Can do torch auto grad if I prefer</li>
+</ul></li>
+<li>What does recompute kernel = True mean?</li>
+<li>Order of ops in score: T or K first?</li>
+<li>How are predictions made in this case?</li>
+</ul>
 
 
 </section>
