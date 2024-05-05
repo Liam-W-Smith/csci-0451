@@ -7,8 +7,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Liam Smith">
-<meta name="dcterms.date" content="2024-04-26">
-<meta name="description" content="….">
+<meta name="dcterms.date" content="2024-05-05">
+<meta name="description" content="Extending logistic regression to a sparse version that detects nonlinear decision boundaries.">
 
 <title>My Awesome CSCI 0451 Blog - Sparse Kernelized Logistic Regression</title>
 <style>
@@ -200,7 +200,7 @@ window.Quarto = {
       <h1 class="title">Sparse Kernelized Logistic Regression</h1>
                   <div>
         <div class="description">
-          ….
+          Extending logistic regression to a sparse version that detects nonlinear decision boundaries.
         </div>
       </div>
                 </div>
@@ -219,7 +219,7 @@ window.Quarto = {
       <div>
       <div class="quarto-title-meta-heading">Published</div>
       <div class="quarto-title-meta-contents">
-        <p class="date">April 26, 2024</p>
+        <p class="date">May 5, 2024</p>
       </div>
     </div>
     
@@ -240,6 +240,7 @@ window.Quarto = {
 
 <section id="abstract" class="level2">
 <h2 class="anchored" data-anchor-id="abstract">Abstract</h2>
+<p>In this blog post, we extend our previous implementation of standard logistic regression to a kernelized setting, allowing our model to detect nonlinear decision boundaries. Specifically, we implement a sparse kernel machine using the <span class="math inline">\(\ell_1\)</span> regulizer to ensure that the vast majority of <span class="math inline">\(\mathbf{a}\)</span>’s entries are indistinguishable from zero. After implementing sparse kernelized logistic regression, we perform a few experiments to investigate the properties of the algorithm. We test different values of <span class="math inline">\(\lambda\)</span> to investigate how this parameter impacts the number of points indistinguishable from zero, we test different values of <span class="math inline">\(\gamma\)</span> to reveal how this parameter impacts the wiggliness of our decision boundary, and we test the model on nonlinear data from <code>scikit-learn</code>’s <code>make_moons()</code> function to illustrate that the model is robust to nonlinear patterns. Finally, we fit a model with a large <span class="math inline">\(\gamma\)</span>-value and compute ROC curves to reveal how this parameter may lead to overfitting. To see my implementation of sparse kernelized logistic regression, please visit <a href="sparse_kernel_logistic.py"><code>sparse_kernel_logistic.py</code></a>.</p>
 </section>
 <section id="generating-training-data" class="level2">
 <h2 class="anchored" data-anchor-id="generating-training-data">Generating Training Data</h2>
@@ -251,7 +252,9 @@ window.Quarto = {
 <span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sparse_kernel_logistic <span class="im">import</span> KernelLogisticRegression, GradientDescentOptimizer</span>
 <span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> torch </span>
 <span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> matplotlib <span class="im">import</span> pyplot <span class="im">as</span> plt</span>
-<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8-whitegrid'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> sklearn.datasets <span class="im">import</span> make_moons</span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> numpy <span class="im">as</span> np</span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>plt.style.use(<span class="st">'seaborn-v0_8-whitegrid'</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
 <p>Next, we generate the data that we will use to train our model. Thank you to Professor Chodrow for providing the functions for generating and visualizing training data.</p>
 <div id="cell-4" class="cell" data-execution_count="2">
@@ -276,13 +279,16 @@ window.Quarto = {
 <span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>        ax.scatter(X[ix,<span class="dv">0</span>], X[ix,<span class="dv">1</span>], s <span class="op">=</span> <span class="dv">20</span>,  c <span class="op">=</span> y[ix], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"darkgrey"</span>, cmap <span class="op">=</span> <span class="st">"BrBG"</span>, vmin <span class="op">=</span> <span class="op">-</span><span class="dv">1</span>, vmax <span class="op">=</span> <span class="dv">2</span>, alpha <span class="op">=</span> <span class="fl">0.8</span>, marker <span class="op">=</span> markers[i])</span>
 <span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a>    ax.<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="vs">r"$x_1$"</span>, ylabel <span class="op">=</span> <span class="vs">r"$x_2$"</span>)</span>
 <span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># create classification data</span></span>
-<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.4</span>)</span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
 <span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># plot classification data</span></span>
-<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
-<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
-<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Training Data"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># create classification data</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a>X, y <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.4</span>)</span>
+<span id="cb2-27"><a href="#cb2-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-28"><a href="#cb2-28" aria-hidden="true" tabindex="-1"></a><span class="co"># plot classification data</span></span>
+<span id="cb2-29"><a href="#cb2-29" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb2-30"><a href="#cb2-30" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
+<span id="cb2-31"><a href="#cb2-31" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Training Data"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
@@ -292,98 +298,348 @@ window.Quarto = {
 </div>
 </div>
 </section>
-<section id="asdf" class="level2">
-<h2 class="anchored" data-anchor-id="asdf">asdf</h2>
-<div id="cell-6" class="cell" data-execution_count="32">
+<section id="fitting-our-first-model" class="level2">
+<h2 class="anchored" data-anchor-id="fitting-our-first-model">Fitting Our First Model</h2>
+<p>With our training data in hand and our implementation of kernelized logistic regression in <a href="sparse_kernel_logistic.py">sparse_kernel_logistic.py</a>, we are ready to fit our first model! In our first model, we are paying particular attention to whether our output matches our expected output, hoping to confirm that our implementation is adequate and bug-free.</p>
+<p>In this model and for the remainder of this blog post, we will use the Gaussian radial basis function (RBF) kernel.</p>
+<div id="cell-6" class="cell" data-execution_count="3">
 <div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="co"># define kernel</span></span>
 <span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> rbf_kernel(X_1, X_2, gamma):</span>
 <span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> torch.exp(<span class="op">-</span>gamma<span class="op">*</span>torch.cdist(X_1, X_2)<span class="op">**</span><span class="dv">2</span>)</span>
 <span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
-<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X, rbf_kernel, lam <span class="op">=</span> <span class="fl">0.1</span>, gamma <span class="op">=</span> <span class="fl">0.1</span>)</span>
-<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
-<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
-<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
-<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
-<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X, rbf_kernel, lam <span class="op">=</span> <span class="fl">.1</span>, gamma <span class="op">=</span> <span class="fl">0.1</span>)</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<div id="cell-7" class="cell" data-execution_count="33">
-<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>(<span class="fl">1.0</span><span class="op">*</span>(KR.a <span class="op">&gt;</span> <span class="fl">0.001</span>)).mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="33">
-<pre><code>tensor(0.)</code></pre>
-</div>
-</div>
-<div id="cell-8" class="cell" data-execution_count="34">
-<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>KR.a.<span class="bu">max</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="34">
-<pre><code>tensor(9.3635e-06)</code></pre>
-</div>
-</div>
-<div id="cell-9" class="cell" data-execution_count="35">
-<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>KR.loss(X, y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="35">
-<pre><code>tensor(-0.6931)</code></pre>
+<p>In sparse kernelized logistic regression, the <span class="math inline">\(\ell_1\)</span> norm is used to make the model sparse – that is, to make most entries of <span class="math inline">\(\mathbf{a}\)</span> equal to zero. Let us confirm that must of our entries for <span class="math inline">\(\mathbf{a}\)</span> are indeed close to zero.</p>
+<div id="cell-8" class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># compute proportion of coefficients distinguishable from zero</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>(<span class="fl">1.0</span><span class="op">*</span>(torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span>)).mean()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="4">
+<pre><code>tensor(0.0500)</code></pre>
 </div>
 </div>
-<div id="cell-10" class="cell" data-execution_count="36">
-<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(X[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(X[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
-<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
-<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)<span class="co">#, recompute_kernel = True)</span></span>
-<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
-<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
-<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG"</span>, </span>
-<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
-<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
-<span id="cb10-21"><a href="#cb10-21" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[ix, <span class="dv">0</span>],X[ix, <span class="dv">1</span>], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"black"</span>)<span class="op">;</span></span>
-<span id="cb10-22"><a href="#cb10-22" aria-hidden="true" tabindex="-1"></a><span class="co"># ax.scatter(X[ix, 0],X[ix, 1], facecolors = "none", edgecolors = "black")</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Success! Finally, let us confirm that our model is scoring points appropriately. We will not actually implement a decision threshold in this blog post, but the important point here is whether the scores of one class tend to be different from the scores of the other class.</p>
+<div id="cell-10" class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot results using Professor Chodrow's provided code</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(X[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(X[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG_r"</span>, </span>
+<span id="cb6-19"><a href="#cb6-19" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
+<span id="cb6-20"><a href="#cb6-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb6-21"><a href="#cb6-21" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
+<span id="cb6-22"><a href="#cb6-22" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[ix, <span class="dv">0</span>],X[ix, <span class="dv">1</span>], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"black"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/cell-8-output-1.png" class="img-fluid figure-img"></p>
+<p><img src="index_files/figure-html/cell-6-output-1.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
 </div>
 </div>
+<p>In our output, there is a dark brown ring around most of the brown points in the lower left side of the plot. Expanding outwards, each subsequent concentric ring is less and less likely to contain brown points. These rings correspond to scores of that region of the graph, so you can imagine the model picking an appropriate score cutoff that serves as a pretty accurate decision threshold.</p>
+</section>
+<section id="basic-experiments" class="level2">
+<h2 class="anchored" data-anchor-id="basic-experiments">Basic Experiments</h2>
+<p>In this section, we tinker with our parameter values in order to see how they impact the output of our model.</p>
+<section id="experiment-1-adjusting-lambda" class="level3">
+<h3 class="anchored" data-anchor-id="experiment-1-adjusting-lambda">Experiment 1: Adjusting <span class="math inline">\(\lambda\)</span></h3>
+<p>In our first experiment, we leave all of the parameters the same as our initial model except for <span class="math inline">\(\lambda\)</span>, which we increase from <span class="math inline">\(0.1\)</span> to <span class="math inline">\(0.11\)</span>. Recall that <span class="math inline">\(\lambda\)</span> is the coefficient of the <span class="math inline">\(\ell_1\)</span> regulizer. As the <span class="math inline">\(\ell_1\)</span> regulizer is responsible for making <span class="math inline">\(\mathbf{a}\)</span> sparse, increasing the weight of this regularization term will have the effect of making <span class="math inline">\(\mathbf{a}\)</span> even more sparse.</p>
+<div id="cell-13" class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X, rbf_kernel, lam <span class="op">=</span> <span class="fl">.11</span>, gamma <span class="op">=</span> <span class="fl">0.1</span>)</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>Now that we have trained our model, let us determine how many entries of <span class="math inline">\(\mathbf{a}\)</span> are distinguishable from zero. As before, we define distinguishable from zero to mean that a coefficient’s magnitude is greater than <span class="math inline">\(0.001\)</span>.</p>
+<div id="cell-15" class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate total points distinguishable from zero</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>(<span class="fl">1.0</span><span class="op">*</span>(torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span>)).<span class="bu">sum</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="7">
+<pre><code>tensor(1.)</code></pre>
+</div>
+</div>
+<p>In this case, by increasing <span class="math inline">\(\lambda\)</span> from <span class="math inline">\(0.1\)</span> to just <span class="math inline">\(0.11\)</span>, our model went from having <span class="math inline">\(5\)</span> points with weights distinguishable from zero to having only <span class="math inline">\(1\)</span>.</p>
+</section>
+<section id="experiment-2-adjusting-gamma" class="level3">
+<h3 class="anchored" data-anchor-id="experiment-2-adjusting-gamma">Experiment 2: Adjusting <span class="math inline">\(\gamma\)</span></h3>
+<p>In this experiment, we use the same parameters from our initial model except for <span class="math inline">\(\gamma\)</span>, which controls the bandwidth of our RBF kernel. According to <a href="https://scikit-learn.org/stable/auto_examples/svm/plot_rbf_parameters.html">scikit-learn</a>, this means that <span class="math inline">\(\gamma\)</span> controls how far the influence of a training point reaches. Smaller <span class="math inline">\(\gamma\)</span>-values give points influence over more space, while larger <span class="math inline">\(\gamma\)</span>-values give points influence over less space. In our first example, the shape of our score contours was very smooth. When points have influence over a small amount of space, the model becomes more sensitive to individual points, so I suspect that a larger <span class="math inline">\(\gamma\)</span> value will result in wigglier score contours. To see whether this is true, I increase <span class="math inline">\(\gamma\)</span> from <span class="math inline">\(0.1\)</span> to <span class="math inline">\(3\)</span> below.</p>
+<div id="cell-17" class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X, rbf_kernel, lam <span class="op">=</span> <span class="fl">.1</span>, gamma <span class="op">=</span> <span class="dv">3</span>)</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    opt.step(X, y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-18" class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="co"># plot results using Professor Chodrow's provided code</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(X[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(X[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-12"><a href="#cb11-12" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb11-13"><a href="#cb11-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-14"><a href="#cb11-14" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)</span>
+<span id="cb11-15"><a href="#cb11-15" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
+<span id="cb11-16"><a href="#cb11-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-17"><a href="#cb11-17" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb11-18"><a href="#cb11-18" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG_r"</span>, </span>
+<span id="cb11-19"><a href="#cb11-19" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
+<span id="cb11-20"><a href="#cb11-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb11-21"><a href="#cb11-21" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X, y, ax)</span>
+<span id="cb11-22"><a href="#cb11-22" aria-hidden="true" tabindex="-1"></a>plt.scatter(X[ix, <span class="dv">0</span>],X[ix, <span class="dv">1</span>], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"black"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-10-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>As I anticipated, the score contours are less smooth and less circular. In the lower left, rather than one set of concentric rings, we now have two sets. On the right hand side, we now witness some sharper curves than those present in the concentric rings from our first model. In this manner, our results confirm our expectations that larger values of <span class="math inline">\(\gamma\)</span> result in wigglier decision boundaries.</p>
+</section>
+<section id="experiment-3-detecting-nonlinear-patterns" class="level3">
+<h3 class="anchored" data-anchor-id="experiment-3-detecting-nonlinear-patterns">Experiment 3: Detecting Nonlinear Patterns</h3>
+<p>First, let us use <code>scikit-learn</code>’s <code>make_moons()</code> function to generate data with a nonlinear pattern.</p>
+<div id="cell-20" class="cell" data-execution_count="27">
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Create nonlinear training data</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>moons_X, moons_y <span class="op">=</span> make_moons(n_samples<span class="op">=</span><span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.1</span>)</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Convert to torch tensors</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>moons_X <span class="op">=</span> torch.tensor(moons_X, dtype <span class="op">=</span> torch.float32)</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>moons_y <span class="op">=</span> torch.tensor(moons_y, dtype <span class="op">=</span> torch.float32)</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># plot data</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>plot_classification_data(moons_X, moons_y, ax)</span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a>plt.title(<span class="st">"Training Data"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-11-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>While the pattern of this data is clear to the human eye, it is also clear that the curve separating the two classes of data is not a straight line. Let us see whether our kernelized logistic regression model can detect this difference.</p>
+<div id="cell-22" class="cell" data-execution_count="28">
+<div class="sourceCode cell-code" id="cb13"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># create kernel logistic regression model</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(moons_X, rbf_kernel, lam <span class="op">=</span> <span class="fl">.075</span>, gamma <span class="op">=</span> <span class="dv">4</span>)</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">200000</span>):</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    opt.step(moons_X, moons_y, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="cell-23" class="cell" data-execution_count="29">
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># show results</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(moons_X[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, moons_X[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(moons_X[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, moons_X[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)</span>
+<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
+<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG"</span>, </span>
+<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
+<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>plot_classification_data(moons_X, moons_y, ax)</span>
+<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>plt.scatter(moons_X[ix, <span class="dv">0</span>],moons_X[ix, <span class="dv">1</span>], facecolors <span class="op">=</span> <span class="st">"none"</span>, edgecolors <span class="op">=</span> <span class="st">"black"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-13-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>It took me some time to discover parameter values that resulted in a relatively well-fit model, but with some tuning, it appears that kernelized logistic regression can indeed find nonlinear patterns in data such as the one above. The model has not performed perfectly, but on the top left there is a curve that generally follows the shape of the upper moon, and on the bottom right there is a curve that generally follows the shape of the lower moon. The most difficult region for the model to predict the correct label appears to be where one moon almost intersects the center of the other moon. While it is not perfect, I am overall impressed by how well the model has performed. The fact that kernelized logistic regression can find nonlinear patterns represents a substantial improvement over traditional logistic regression.</p>
+</section>
+</section>
+<section id="overfitting" class="level2">
+<h2 class="anchored" data-anchor-id="overfitting">Overfitting</h2>
+<p>In this section, we intentionally overfit a model with a poor choice of <span class="math inline">\(\gamma\)</span> in order to demonstrate the potential issues of overfitting. First, we generate training and testing data using the same function.</p>
+<div id="cell-26" class="cell" data-execution_count="13">
+<div class="sourceCode cell-code" id="cb15"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># set seed</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>torch.manual_seed(<span class="dv">1</span>)</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="co"># generate training data</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>X_train, y_train <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.6</span>)</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a><span class="co"># generate testing data</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>X_test, y_test <span class="op">=</span> classification_data(n_points <span class="op">=</span> <span class="dv">100</span>, noise <span class="op">=</span> <span class="fl">0.6</span>)</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a><span class="co"># show training and testing data side by side</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">2</span>, figsize <span class="op">=</span> (<span class="dv">10</span>, <span class="dv">6</span>))</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X_train, y_train, ax[<span class="dv">0</span>])</span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">0</span>].set_title(<span class="st">"Training Data"</span>)</span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X_test, y_test, ax[<span class="dv">1</span>])</span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>ax[<span class="dv">1</span>].set_title(<span class="st">"Testing Data"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-14-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Because we used Professor Chodrow’s <code>classification_data()</code> function for generating both datasets, we know that the training and testing data have the same underlying pattern. By inspecting the graphs above, it is obvious that one class tends to be located in the lower left of the graph, while the other class tends to be located in the upper right. By introducing noise into the generation of both datasets, we ensured that the two datasets are not identical. Now that we have our data, we train our model and inspect its score contours.</p>
+<div id="cell-28" class="cell" data-execution_count="14">
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># train model</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>KR <span class="op">=</span> KernelLogisticRegression(X_train, rbf_kernel, lam <span class="op">=</span> <span class="fl">.065</span>, gamma <span class="op">=</span> <span class="dv">50</span>)</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>opt <span class="op">=</span> GradientDescentOptimizer(KR)</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a><span class="co"># fit model</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(<span class="dv">100000</span>):</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># update model</span></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>    opt.step(X_train, y_train, alpha <span class="op">=</span> <span class="fl">0.0001</span>)</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a><span class="co"># show results</span></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>ix <span class="op">=</span> torch.<span class="bu">abs</span>(KR.a) <span class="op">&gt;</span> <span class="fl">0.001</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> torch.linspace(X_train[:,<span class="dv">0</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X_train[:,<span class="dv">0</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> torch.linspace(X_train[:,<span class="dv">1</span>].<span class="bu">min</span>() <span class="op">-</span> <span class="fl">0.2</span>, X_train[:,<span class="dv">1</span>].<span class="bu">max</span>() <span class="op">+</span> <span class="fl">0.2</span>, <span class="dv">101</span>)</span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a>X1, X2 <span class="op">=</span> torch.meshgrid(x1, x2, indexing<span class="op">=</span><span class="st">'ij'</span>)</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a>x1 <span class="op">=</span> X1.ravel()</span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a>x2 <span class="op">=</span> X2.ravel()</span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>X_ <span class="op">=</span> torch.stack((x1, x2), dim <span class="op">=</span> <span class="dv">1</span>)</span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> KR.score(X_)</span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a>preds <span class="op">=</span> <span class="fl">1.0</span><span class="op">*</span>torch.reshape(preds, X1.size())</span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>,<span class="dv">1</span>)</span>
+<span id="cb16-27"><a href="#cb16-27" aria-hidden="true" tabindex="-1"></a>ax.contourf(X1, X2, preds, origin <span class="op">=</span> <span class="st">"lower"</span>, cmap <span class="op">=</span> <span class="st">"BrBG_r"</span>, </span>
+<span id="cb16-28"><a href="#cb16-28" aria-hidden="true" tabindex="-1"></a>vmin <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">min</span>() <span class="op">-</span> preds.<span class="bu">max</span>(), vmax <span class="op">=</span> <span class="dv">2</span><span class="op">*</span>preds.<span class="bu">max</span>() <span class="op">-</span> preds.<span class="bu">min</span>()</span>
+<span id="cb16-29"><a href="#cb16-29" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb16-30"><a href="#cb16-30" aria-hidden="true" tabindex="-1"></a>plot_classification_data(X_train, y_train, ax)</span>
+<span id="cb16-31"><a href="#cb16-31" aria-hidden="true" tabindex="-1"></a>ax.set_title(<span class="st">"Training Data and Score Contours"</span>)<span class="op">;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-15-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Visually, the score contours appear to reflect the individual data points relatively well. The background is blue, with a region of brown surrounding groups of and occasionally individual brown points. However, the underlying pattern used to generate this data is a roughly linear boundary between the upper right and lower left. These somewhat wiggly contours may reflect the noise of our training data more than the overall pattern in the data.</p>
+<p>Let us evaluate the performance of our model on our training data and testing data by computing ROC curves. Thank you to Professor Chodrow for providing some code for creating ROC curves in his <a href="https://www.philchodrow.prof/ml-notes/chapters/04-decision-theory.html">lecture notes</a>.</p>
+<div id="cell-30" class="cell" data-execution_count="15">
+<div class="sourceCode cell-code" id="cb17"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="co"># roc curve training data</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a><span class="co"># store min and max scores</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># train</span></span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>s_train <span class="op">=</span> KR.score(X_train)</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>score_min_train <span class="op">=</span> s_train.<span class="bu">min</span>()</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>score_max_train <span class="op">=</span> s_train.<span class="bu">max</span>()</span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># test</span></span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>s_test <span class="op">=</span> KR.score(X_test)</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>score_min_test <span class="op">=</span> s_test.<span class="bu">min</span>()</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>score_max_test <span class="op">=</span> s_test.<span class="bu">max</span>()</span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-13"><a href="#cb17-13" aria-hidden="true" tabindex="-1"></a><span class="co"># create vectors for TPR and FPR</span></span>
+<span id="cb17-14"><a href="#cb17-14" aria-hidden="true" tabindex="-1"></a>num_thresholds <span class="op">=</span> <span class="dv">101</span></span>
+<span id="cb17-15"><a href="#cb17-15" aria-hidden="true" tabindex="-1"></a>    <span class="co">#train</span></span>
+<span id="cb17-16"><a href="#cb17-16" aria-hidden="true" tabindex="-1"></a>FPR_train <span class="op">=</span> np.zeros(num_thresholds)</span>
+<span id="cb17-17"><a href="#cb17-17" aria-hidden="true" tabindex="-1"></a>TPR_train <span class="op">=</span> np.zeros(num_thresholds)</span>
+<span id="cb17-18"><a href="#cb17-18" aria-hidden="true" tabindex="-1"></a>T_train <span class="op">=</span> np.linspace(score_min_train, score_max_train, num_thresholds)</span>
+<span id="cb17-19"><a href="#cb17-19" aria-hidden="true" tabindex="-1"></a>    <span class="co"># test</span></span>
+<span id="cb17-20"><a href="#cb17-20" aria-hidden="true" tabindex="-1"></a>FPR_test <span class="op">=</span> np.zeros(num_thresholds)</span>
+<span id="cb17-21"><a href="#cb17-21" aria-hidden="true" tabindex="-1"></a>TPR_test <span class="op">=</span> np.zeros(num_thresholds)</span>
+<span id="cb17-22"><a href="#cb17-22" aria-hidden="true" tabindex="-1"></a>T_test <span class="op">=</span> np.linspace(score_min_test, score_max_test, num_thresholds)</span>
+<span id="cb17-23"><a href="#cb17-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-24"><a href="#cb17-24" aria-hidden="true" tabindex="-1"></a><span class="co"># calculate TPR and TNR</span></span>
+<span id="cb17-25"><a href="#cb17-25" aria-hidden="true" tabindex="-1"></a>    <span class="co"># train</span></span>
+<span id="cb17-26"><a href="#cb17-26" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_thresholds):</span>
+<span id="cb17-27"><a href="#cb17-27" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> T_train[i]</span>
+<span id="cb17-28"><a href="#cb17-28" aria-hidden="true" tabindex="-1"></a>    preds    <span class="op">=</span> s_train <span class="op">&lt;=</span> t</span>
+<span id="cb17-29"><a href="#cb17-29" aria-hidden="true" tabindex="-1"></a>    FPR_train[i]   <span class="op">=</span> ((preds <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (y_train <span class="op">==</span> <span class="dv">0</span>)).<span class="bu">sum</span>() <span class="op">/</span> (y_train <span class="op">==</span> <span class="dv">0</span>).<span class="bu">sum</span>()</span>
+<span id="cb17-30"><a href="#cb17-30" aria-hidden="true" tabindex="-1"></a>    TPR_train[i]   <span class="op">=</span> ((preds <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (y_train <span class="op">==</span> <span class="dv">1</span>)).<span class="bu">sum</span>() <span class="op">/</span> (y_train <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()</span>
+<span id="cb17-31"><a href="#cb17-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># test</span></span>
+<span id="cb17-32"><a href="#cb17-32" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> <span class="bu">range</span>(num_thresholds):</span>
+<span id="cb17-33"><a href="#cb17-33" aria-hidden="true" tabindex="-1"></a>    t <span class="op">=</span> T_test[i]</span>
+<span id="cb17-34"><a href="#cb17-34" aria-hidden="true" tabindex="-1"></a>    preds    <span class="op">=</span> s_test <span class="op">&lt;=</span> t</span>
+<span id="cb17-35"><a href="#cb17-35" aria-hidden="true" tabindex="-1"></a>    FPR_test[i]   <span class="op">=</span> ((preds <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (y_test <span class="op">==</span> <span class="dv">0</span>)).<span class="bu">sum</span>() <span class="op">/</span> (y_test <span class="op">==</span> <span class="dv">0</span>).<span class="bu">sum</span>()</span>
+<span id="cb17-36"><a href="#cb17-36" aria-hidden="true" tabindex="-1"></a>    TPR_test[i]   <span class="op">=</span> ((preds <span class="op">==</span> <span class="dv">1</span>) <span class="op">&amp;</span> (y_test <span class="op">==</span> <span class="dv">1</span>)).<span class="bu">sum</span>() <span class="op">/</span> (y_test <span class="op">==</span> <span class="dv">1</span>).<span class="bu">sum</span>()</span>
+<span id="cb17-37"><a href="#cb17-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-38"><a href="#cb17-38" aria-hidden="true" tabindex="-1"></a><span class="co"># create figure</span></span>
+<span id="cb17-39"><a href="#cb17-39" aria-hidden="true" tabindex="-1"></a>fig, ax <span class="op">=</span> plt.subplots(<span class="dv">1</span>, <span class="dv">1</span>)</span>
+<span id="cb17-40"><a href="#cb17-40" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb17-41"><a href="#cb17-41" aria-hidden="true" tabindex="-1"></a>ax.plot(FPR_train, TPR_train, color <span class="op">=</span> <span class="st">"black"</span>, label <span class="op">=</span> <span class="st">"Training ROC"</span>)</span>
+<span id="cb17-42"><a href="#cb17-42" aria-hidden="true" tabindex="-1"></a>ax.plot([<span class="dv">0</span>,<span class="dv">1</span>], [<span class="dv">0</span>,<span class="dv">1</span>], linestyle<span class="op">=</span><span class="st">"--"</span>, color <span class="op">=</span> <span class="st">"grey"</span>)</span>
+<span id="cb17-43"><a href="#cb17-43" aria-hidden="true" tabindex="-1"></a>ax.plot(FPR_test, TPR_test, color <span class="op">=</span> <span class="st">"red"</span>, label <span class="op">=</span> <span class="st">"Testing ROC"</span>)</span>
+<span id="cb17-44"><a href="#cb17-44" aria-hidden="true" tabindex="-1"></a>ax.set_aspect(<span class="st">'equal'</span>)</span>
+<span id="cb17-45"><a href="#cb17-45" aria-hidden="true" tabindex="-1"></a>plt.legend(loc <span class="op">=</span> <span class="st">"lower right"</span>)</span>
+<span id="cb17-46"><a href="#cb17-46" aria-hidden="true" tabindex="-1"></a>labs <span class="op">=</span> ax.<span class="bu">set</span>(xlabel <span class="op">=</span> <span class="st">"False Positive Rate"</span>, ylabel <span class="op">=</span> <span class="st">"True Positive Rate"</span>, title <span class="op">=</span> <span class="st">"ROC Curve"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/cell-16-output-1.png" class="img-fluid figure-img"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>Recall that a perfect ROC curve reaches the top left corner of this graph with a false positive rate of 0 and a true positive rate of 1. Because data is rarely perfect, models rarely achieve this goal. Rather, the effectiveness of a model is represented by how close a model comes to achieving that. In our case, the training ROC curve is substantially above and to the left of the testing ROC curve, indicating that our model does not generalize well to the testing data. In fact, the distance between the training and testing ROC curves is roughly the same as the distance between the testing curve and the diagonal line that represents a model that randomly guesses at the classes. In this manner, it is clear that our model performs dramatically better on our training data than on our testing data. Because <span class="math inline">\(\gamma\)</span> is so large, the score contours reflect the noise in our data more than the underlying pattern of our data, leading our model to ineffectively generalize to new data.</p>
 </section>
 <section id="conclusion" class="level2">
 <h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
-</section>
-<section id="questions" class="level1">
-<h1>Questions:</h1>
-<ul>
-<li>What is <span class="math inline">\(X_t\)</span> / how is it different from <span class="math inline">\(X\)</span>?
-<ul>
-<li>t is the training one</li>
-<li>only different when doing it on the test set</li>
-</ul></li>
-<li>Why do I have to save <span class="math inline">\(X_t\)</span> as an instance variable?
-<ul>
-<li>bc use X on test</li>
-</ul></li>
-<li>How does one do gradient descent with a?
-<ul>
-<li>Compute gradient of the loss function.</li>
-<li>First term not too bad. Second term look at lecture notes</li>
-<li>Similar to w</li>
-<li>Can do torch auto grad if I prefer</li>
-</ul></li>
-<li>What does recompute kernel = True mean?</li>
-<li>Order of ops in score: T or K first?</li>
-<li>How are predictions made in this case?</li>
-</ul>
+<p>In this blog post, we extended our work with logistic regression to a new situation: nonlinearity. In our prior work, we implemented standard logistic regression and performed experiments with several optimizers, including standard gradient descent, gradient descent with momentum, and Newton’s method. In this assignment, rather than searching for more efficient optimization algorithms, we implemented a kernelized model that can find a wide array of nonlinear patterns. We performed several experiments in order to deepen our understanding of the model, discovering that larger values of <span class="math inline">\(\lambda\)</span> result in fewer training points with non-zero coefficients, larger values of <span class="math inline">\(\gamma\)</span> result in wigglier decision boundaries, and these large <span class="math inline">\(\gamma\)</span> values can often lead to overfitting. We also illustrated that our model can find nonlinear decision boundaries by fitting our model on data created with <code>scikit-learn</code>’s <code>make_moons()</code> function. Overall, this assignment allowed me to learn the theory behind and implementation of an intruiging variation of an otherwise familiar machine learning algorithm.</p>
 
 
 </section>
